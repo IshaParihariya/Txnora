@@ -1,6 +1,7 @@
 package com.example.txnora.service;
 
 import com.example.txnora.dto.CreateTransactionRequest;
+import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class TransactionService
         transaction.setCurrency(request.getCurrency());
 
         //status initiated
-        transaction.setStatus("INITIATED");
+        transaction.setStatus(TransactionStatus.INITIATED);
 
         transaction.setCreatedAt(Instant.now());
         //we will change the UpdatedAt later..
@@ -47,7 +48,7 @@ public class TransactionService
     public Transaction getTransactionService(String id)
     {
         //findById() returns Optional<Transaction>
-        // if transaction is not present, throw exception
+        //if transaction is not present, throw exception
         return transactionRepository.findById(id).orElseThrow(()-> new RuntimeException("Transaction not found!"));
     }
 
@@ -61,5 +62,100 @@ public class TransactionService
         return transactionRepository.findAllByUserId(userId);
     }
 
+    //changing status transition
+    public Transaction changeStatus(String id)
+    {
+        //if transaction not found then throw exception
+        //we will later on do global exceptions
+        Transaction transaction=transactionRepository.findById(id)
+               .orElseThrow(()-> new RuntimeException("Transaction not found!"));
+
+       TransactionStatus currentStatus=transaction.getStatus();
+
+       //how can i get to know what the next status is ???
+        //this needs to be from the backend logic
+        TransactionStatus nextStatus=determineNextStatus(currentStatus);
+
+
+       //now lets validate like if next status is allowed for this current one..
+        if(!statusIsAllowed(currentStatus,nextStatus))
+        {
+            // after failed -> process NOT ALLOWED
+            // after settlement -> no process allowed
+            // apart from that all are allowed
+            // but no status need to be skipped
+            throw new RuntimeException("Invalid transaction status transition!");
+        }
+
+        //if status validation is all gud
+        //then change the status
+        transaction.setStatus(nextStatus);
+        //updated at what Instant
+        transaction.setUpdatedAt(Instant.now());
+
+        //saving this status now
+        //but here if we saving this then mongodb will not have the older data so
+        //we will work on the history later now
+        //rn we just gonn' get this part done..
+        return transactionRepository.save(transaction);
+
+    }
+
+    private TransactionStatus determineNextStatus(TransactionStatus currentStatus)
+    {
+        TransactionStatus nextStatus=null;
+        if(currentStatus==TransactionStatus.INITIATED)
+        {
+            nextStatus=TransactionStatus.PROCESSING;
+        }
+        else if(currentStatus==TransactionStatus.PROCESSING)
+        {
+            nextStatus=TransactionStatus.AUTHORIZED;
+        }
+        else if(currentStatus==TransactionStatus.AUTHORIZED)
+        {
+            nextStatus=TransactionStatus.SETTLEMENT_PENDING;
+        }
+        else if(currentStatus==TransactionStatus.SETTLEMENT_PENDING)
+        {
+            nextStatus=TransactionStatus.SETTLED;
+        }
+       // else if(currentStatus==TransactionStatus.SETTLED)
+        //{
+            //no status further needed broo means transaction is done!!
+        //}
+
+        return nextStatus;
+    }
+
+
+    private boolean statusIsAllowed(TransactionStatus currentStatus,TransactionStatus nextStatus)
+    {
+        if (currentStatus == TransactionStatus.INITIATED)
+        {
+            return nextStatus == TransactionStatus.PROCESSING;
+        }
+
+        if (currentStatus == TransactionStatus.PROCESSING)
+        {
+            return nextStatus == TransactionStatus.AUTHORIZED
+                    || nextStatus == TransactionStatus.FAILED;
+        }
+
+        if (currentStatus == TransactionStatus.AUTHORIZED)
+        {
+            return nextStatus == TransactionStatus.SETTLEMENT_PENDING
+                    || nextStatus == TransactionStatus.FAILED;
+        }
+
+        if (currentStatus == TransactionStatus.SETTLEMENT_PENDING)
+        {
+            return nextStatus == TransactionStatus.SETTLED
+                    || nextStatus == TransactionStatus.FAILED;
+        }
+
+        // SETTLED and FAILED are terminal states
+        return false;
+    }
 
 }

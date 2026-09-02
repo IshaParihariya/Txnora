@@ -1,5 +1,6 @@
 package com.example.txnora.model;
 
+import com.example.txnora.enums.TransactionStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -18,25 +19,23 @@ public class Transaction
     private String id; //mongoDb id
 
     @NotBlank
-    public String userId; //userId
+    private String userId; //userId
 
     @NotBlank
-    public String merchantId; //receiver Id
+    private String merchantId; //receiver Id
 
     @NotNull
     @Positive
-    public BigDecimal amount; //amount transferred
+    private BigDecimal amount; //amount transferred
 
-    public Instant createdAt; //txn created at
+    private Instant createdAt; //txn created at
 
-    public Instant updatedAt; //updated at
+    private Instant updatedAt; //updated at
 
     @NotBlank
-    public String currency; //currency like INR
+    private String currency; //currency like INR
 
-    public String status; //status of the txn
-    //we will update this and create an enum
-
+    private TransactionStatus status; //status of the txn
 
     //getters and setters
     public String getId() {
@@ -79,11 +78,11 @@ public class Transaction
         this.currency = currency;
     }
 
-    public String getStatus() {
+    public TransactionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TransactionStatus status) {
         this.status = status;
     }
 
