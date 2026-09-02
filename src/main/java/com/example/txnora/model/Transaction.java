@@ -10,7 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-//mongoDb
+/**
+ * transaction details in the database
+ */
 @Document(collection="transactions")
 public class Transaction
 {   //notblank for strings

@@ -6,9 +6,11 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-//our client is only allowed to send these
-//we created this separately bcuz only this info we need to get from the client..
-//validation also done here now logical stuff in the Service
+/**
+ * our client is only allowed to send these
+ * we created this separately bcuz only this info we need to get from the client..
+ * validation also done here now logical stuff in the Service
+ */
 
 public class CreateTransactionRequest
 {

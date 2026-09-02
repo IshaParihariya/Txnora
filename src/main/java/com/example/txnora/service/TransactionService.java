@@ -63,7 +63,7 @@ public class TransactionService
     }
 
     //changing status transition
-    public Transaction changeStatus(String id)
+    public Transaction changeStatus(String id,TransactionStatus nextStatus)
     {
         //if transaction not found then throw exception
         //we will later on do global exceptions
@@ -71,10 +71,6 @@ public class TransactionService
                .orElseThrow(()-> new RuntimeException("Transaction not found!"));
 
        TransactionStatus currentStatus=transaction.getStatus();
-
-       //how can i get to know what the next status is ???
-        //this needs to be from the backend logic
-        TransactionStatus nextStatus=determineNextStatus(currentStatus);
 
 
        //now lets validate like if next status is allowed for this current one..
@@ -101,32 +97,7 @@ public class TransactionService
 
     }
 
-    private TransactionStatus determineNextStatus(TransactionStatus currentStatus)
-    {
-        TransactionStatus nextStatus=null;
-        if(currentStatus==TransactionStatus.INITIATED)
-        {
-            nextStatus=TransactionStatus.PROCESSING;
-        }
-        else if(currentStatus==TransactionStatus.PROCESSING)
-        {
-            nextStatus=TransactionStatus.AUTHORIZED;
-        }
-        else if(currentStatus==TransactionStatus.AUTHORIZED)
-        {
-            nextStatus=TransactionStatus.SETTLEMENT_PENDING;
-        }
-        else if(currentStatus==TransactionStatus.SETTLEMENT_PENDING)
-        {
-            nextStatus=TransactionStatus.SETTLED;
-        }
-       // else if(currentStatus==TransactionStatus.SETTLED)
-        //{
-            //no status further needed broo means transaction is done!!
-        //}
 
-        return nextStatus;
-    }
 
 
     private boolean statusIsAllowed(TransactionStatus currentStatus,TransactionStatus nextStatus)
@@ -156,6 +127,26 @@ public class TransactionService
 
         // SETTLED and FAILED are terminal states
         return false;
+    }
+
+    public Transaction startProcessing(String id)
+    {
+        return changeStatus(id, TransactionStatus.PROCESSING);
+    }
+
+    public Transaction authorizeTransaction(String id)
+    {
+        return changeStatus(id, TransactionStatus.AUTHORIZED);
+    }
+
+    public Transaction startSettlement(String id)
+    {
+        return changeStatus(id, TransactionStatus.SETTLEMENT_PENDING);
+    }
+
+    public Transaction completeSettlement(String id)
+    {
+        return changeStatus(id, TransactionStatus.SETTLED);
     }
 
 }

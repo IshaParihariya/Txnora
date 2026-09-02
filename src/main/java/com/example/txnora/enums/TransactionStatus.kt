@@ -1,6 +1,9 @@
 package com.example.txnora.enums
 
-//these are some fixed Transaction status
+/**
+ * these are some fixed Transaction status
+ */
+
 enum class TransactionStatus
 {
     INITIATED,
