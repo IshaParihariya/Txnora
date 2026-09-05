@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * to do all risk analysis if there are no risks in authorising this particular transaction..
  * also adding after authorisation
- * and after setllement pending status the conditions in this only
+ * and after settlement pending status the conditions in this only
  */
 @Slf4j
 @Service
