@@ -13,14 +13,13 @@ import java.util.List;
 public class TransactionController
 {
     private final TransactionService transactionService;
-    private final TransactionWorkflowService transactionWorkflowService;
 
 
     //constructor injection
-    public TransactionController(TransactionService transactionService, TransactionWorkflowService transactionWorkflowService)
+    public TransactionController(TransactionService transactionService)
     {
         this.transactionService=transactionService;
-        this.transactionWorkflowService = transactionWorkflowService;
+
     }
 
     @PostMapping("/transactions")
@@ -32,9 +31,10 @@ public class TransactionController
 
         // Backend starts the transaction workflow
         //WE WANT TO WORK WITH KAFKA HERE
-        transactionWorkflowService.processTransaction(transaction.getId());
+        //added kafka here in the flow
+        //transactionWorkflowService.processTransaction(transaction.getId());
 
-        return transactionService.createTransactionService(request);
+        return transaction;
     }
 
     @GetMapping("transactions/{id}")

@@ -9,13 +9,21 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * transactions created then
+ * TransactionWorkFlowService class
+ * there the flow is continued
+ */
 @Service
 public class TransactionService
 {
     private final TransactionRepository transactionRepository;
+    //KAFKA
+    private final TransactionEventProducer eventProducer;
 
-    public TransactionService(TransactionRepository transactionRepository) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer) {
         this.transactionRepository = transactionRepository;
+        this.eventProducer = eventProducer;
     }
 
     public Transaction createTransactionService(CreateTransactionRequest request)
@@ -42,7 +50,16 @@ public class TransactionService
 
         //the save() method is already provided by Spring Data MongoDB
         //because our repository will extend MongoRepository
-        return transactionRepository.save(transaction);
+
+        // saving first here bro
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+
+        //KAFKA
+       eventProducer.publishTransactionCreated(savedTransaction.getId());
+
+        return savedTransaction;
+
     }
 
     public Transaction getTransactionService(String id)
