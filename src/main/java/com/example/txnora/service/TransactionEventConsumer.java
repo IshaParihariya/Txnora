@@ -1,5 +1,6 @@
 package com.example.txnora.service;
 
+import com.example.txnora.event.TransactionCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -22,11 +23,11 @@ public class TransactionEventConsumer {
             topics = "transaction-created",
             groupId = "txnora-workflow-group"
     )
-    public void consumeTransactionCreated(String transactionId) {
+    public void consumeTransactionCreated(TransactionCreatedEvent event) {
 
-        log.info("Received TransactionCreated event: " + transactionId);
+        log.info("Received TransactionCreated event: " + event.transactionId);
         //System.out.println("Received TransactionCreated event: " + transactionId);
 
-        workflowService.processTransaction(transactionId);
+        workflowService.processTransaction(event.transactionId);
     }
 }

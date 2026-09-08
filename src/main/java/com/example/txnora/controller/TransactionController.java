@@ -8,7 +8,18 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
+/*
+ABOUT IDEMPOTENCY ERROR:
+we had an error here like same event retrying
+so status=initiated -> processing this happened
+but something failed so kafka retried so status = processing
+so as it was again processing
+processing -> processing CANNOT HAPPEN
+so we got an error
+this can be resolved with idempotency
+So yes, eventually we'll make the consumer/workflow idempotent,
+ so processing the same event again doesn't break the transaction.
+ */
 @RestController
 public class TransactionController
 {

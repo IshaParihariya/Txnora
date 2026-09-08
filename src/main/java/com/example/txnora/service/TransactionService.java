@@ -2,6 +2,7 @@ package com.example.txnora.service;
 
 import com.example.txnora.dto.CreateTransactionRequest;
 import com.example.txnora.enums.TransactionStatus;
+import com.example.txnora.event.TransactionCreatedEvent;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class TransactionService
     public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer) {
         this.transactionRepository = transactionRepository;
         this.eventProducer = eventProducer;
+
     }
 
     public Transaction createTransactionService(CreateTransactionRequest request)
@@ -56,7 +58,16 @@ public class TransactionService
 
 
         //KAFKA
-       eventProducer.publishTransactionCreated(savedTransaction.getId());
+        //passing this info to Kafka from TransactionCreatedEvent
+        //object created here cuz we need new event for each new transaction
+        TransactionCreatedEvent event =new TransactionCreatedEvent();
+
+        event.transactionId = savedTransaction.getId();
+        event.userId = savedTransaction.getUserId();
+        event.merchantId = savedTransaction.getMerchantId();
+        event.amount = savedTransaction.getAmount();
+        event.currency = savedTransaction.getCurrency();
+       eventProducer.publishTransactionCreated(event);
 
         return savedTransaction;
 
