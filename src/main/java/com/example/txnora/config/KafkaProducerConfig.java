@@ -17,6 +17,11 @@ import java.util.Map;
 /**
  * serializer as kafka understands only bytes
  *  TransactionCreatedEvent -> JSON -> bytes
+ *
+ *
+ *  KafkaProducerConfig = "How should my Kafka Producer behave?"
+ *
+ * TransactionEventProducer = "What event do I want to send?"
  */
 @Configuration
 public class KafkaProducerConfig {
@@ -48,6 +53,12 @@ public class KafkaProducerConfig {
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 JacksonJsonSerializer.class
         );
+
+
+        //PRODUCER RETRY
+        config.put(ProducerConfig.RETRIES_CONFIG, 3); //3 RETRIES
+        config.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000); //WAIT 1 SECOUND AFTER EACH FAIL
+        config.put(ProducerConfig.ACKS_CONFIG, "all"); //ACK for producer that its success!
 
         return new DefaultKafkaProducerFactory<>(config);
     }

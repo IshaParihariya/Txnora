@@ -4,12 +4,14 @@ import com.example.txnora.event.TransactionCreatedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 //deserialization
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,6 +67,16 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(consumerFactory());
+
+
+        //CONSUMER RETRY
+        //backoff means after this again try to process it
+        //here 2000L means after 2 sec retry
+        //3L means number of attempts after initial fail
+        DefaultErrorHandler errorHandler =
+                new DefaultErrorHandler(new FixedBackOff(2000L, 3L));
+
+        factory.setCommonErrorHandler(errorHandler);
 
         return factory;
     }

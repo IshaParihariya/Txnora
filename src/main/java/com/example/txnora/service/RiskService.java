@@ -38,6 +38,9 @@ public class RiskService
     //before authorization
     public boolean isRisky(Transaction transaction)
     {
+        //debugging purpose
+        log.info("RISK CHECK STARTED for transaction: {}", transaction.getId());
+
         //Compare the transaction amount with 100000.
         //If the result is greater than 0, the transaction amount is greater than 100000
         if(transaction.getAmount().compareTo(new BigDecimal(100000)) > 0)
@@ -47,9 +50,15 @@ public class RiskService
             return true;
         }
 
+        //debugging
+        log.info("Looking for merchant: {}", transaction.getMerchantId());
+
         //merchant or reciever might be suspicious
         Merchant merchant = merchantRepository.findById(transaction.getMerchantId())
                 .orElseThrow(() -> new RuntimeException("Merchant not found!"));
+        //debugging
+        log.info("Merchant found: {}", merchant.getId());
+
 
         if (merchant.getMerchantRiskLevel() != MerchantRiskLevel.LOW)
         {
@@ -70,6 +79,9 @@ public class RiskService
             log.warn("Unsupported currency: {}", transaction.getCurrency());
             return true;
         }
+
+        //debugging
+        log.info("RISK CHECK PASSED for transaction: {}", transaction.getId());
 
         //more risks are left will cover them later..
         return false;

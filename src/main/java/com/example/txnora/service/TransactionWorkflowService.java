@@ -33,6 +33,7 @@ public class TransactionWorkflowService
             transactionService.changeStatus(id, TransactionStatus.FAILED);
             return;
         }
+
         //if not risky it will be authorized
         transaction=transactionService.authorizeTransaction(id);
 

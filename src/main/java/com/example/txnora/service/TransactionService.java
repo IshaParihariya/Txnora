@@ -4,7 +4,9 @@ import com.example.txnora.dto.CreateTransactionRequest;
 import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.event.TransactionCreatedEvent;
 import com.example.txnora.model.Transaction;
+import com.example.txnora.repository.MerchantRepository;
 import com.example.txnora.repository.TransactionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -15,6 +17,7 @@ import java.util.List;
  * TransactionWorkFlowService class
  * there the flow is continued
  */
+@Slf4j
 @Service
 public class TransactionService
 {
@@ -22,10 +25,14 @@ public class TransactionService
     //KAFKA
     private final TransactionEventProducer eventProducer;
 
-    public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer) {
+    //merchant repo
+    private final MerchantRepository merchantRepository;
+
+    public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer, MerchantRepository merchantRepository) {
         this.transactionRepository = transactionRepository;
         this.eventProducer = eventProducer;
 
+        this.merchantRepository = merchantRepository;
     }
 
     public Transaction createTransactionService(CreateTransactionRequest request)
@@ -93,15 +100,22 @@ public class TransactionService
     //changing status transition
     public Transaction changeStatus(String id,TransactionStatus nextStatus)
     {
+        //debugging
+        log.info("inside change status method for authorisation");
+
         //if transaction not found then throw exception
         //we will later on do global exceptions
         Transaction transaction=transactionRepository.findById(id)
                .orElseThrow(()-> new RuntimeException("Transaction not found!"));
 
-       TransactionStatus currentStatus=transaction.getStatus();
+        //debuggind
+        log.info("transaction found : "+ id);
 
+        TransactionStatus currentStatus=transaction.getStatus();
 
-       //now lets validate like if next status is allowed for this current one..
+        log.info("status of the transaction found  {}", currentStatus);
+
+        //now lets validate like if next status is allowed for this current one..
         if(!statusIsAllowed(currentStatus,nextStatus))
         {
             // after failed -> process NOT ALLOWED
@@ -110,6 +124,9 @@ public class TransactionService
             // but no status need to be skipped
             throw new RuntimeException("Invalid transaction status transition!");
         }
+
+        //debugging
+        log.info("after status is alllowed");
 
         //if status validation is all gud
         //then change the status
@@ -130,6 +147,9 @@ public class TransactionService
 
     private boolean statusIsAllowed(TransactionStatus currentStatus,TransactionStatus nextStatus)
     {
+        //debugging
+        log.info("in statusIsAllowed method");
+
         if (currentStatus == TransactionStatus.INITIATED)
         {
             return nextStatus == TransactionStatus.PROCESSING;
@@ -153,6 +173,10 @@ public class TransactionService
                     || nextStatus == TransactionStatus.FAILED;
         }
 
+        //debugging
+        log.info("failed in statusIsAllowed");
+
+
         // SETTLED and FAILED are terminal states
         return false;
     }
@@ -164,6 +188,7 @@ public class TransactionService
 
     public Transaction authorizeTransaction(String id)
     {
+        log.info("inside authorizeTransaction method in TransactionService");
         return changeStatus(id, TransactionStatus.AUTHORIZED);
     }
 
