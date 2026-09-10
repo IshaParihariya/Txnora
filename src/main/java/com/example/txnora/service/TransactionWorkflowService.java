@@ -9,55 +9,84 @@ import org.springframework.stereotype.Service;
  * to trigger the transaction lifecycles..
  */
 @Service
-public class TransactionWorkflowService
-{
+public class TransactionWorkflowService {
     private final TransactionService transactionService;
     private final RiskService riskService;
 
-    public TransactionWorkflowService(TransactionService transactionService, RiskService riskService)
-    {
-        this.transactionService=transactionService;
+    public TransactionWorkflowService(TransactionService transactionService, RiskService riskService) {
+        this.transactionService = transactionService;
         this.riskService = riskService;
     }
 
-    public void processTransaction(String id)
+    public Transaction processTransaction(String id)
     {
-        //start the processing
-        Transaction transaction =transactionService.startProcessing(id);
-        //logic about transaction before authorising
-        //risks are all checked
 
-        //if risky then stop there => FAILED
-        if(riskService.isRisky(transaction))
-        {
-            transactionService.changeStatus(id, TransactionStatus.FAILED);
-            return;
+        //here we made changes cuz we had an another idempotency problem
+        //if status = authorised and it fails
+        //retry will again start from start processing
+        //but as already authorised so it will be an error
+        //here we are continuing from where it failed
+
+        // First: get the CURRENT state from MongoDB
+        Transaction transaction =
+                transactionService.getTransactionService(id);
+
+
+        // Already completely handled
+        if (transaction.getStatus() == TransactionStatus.SETTLED ||
+                transaction.getStatus() == TransactionStatus.FAILED) {
+            return transaction;
         }
 
-        //if not risky it will be authorized
-        transaction=transactionService.authorizeTransaction(id);
+        // If still INITIATED, start processing
+        if (transaction.getStatus() == TransactionStatus.INITIATED) {
+            transaction = transactionService.startProcessing(id);
 
-        //authorisation we will again check all these
-        // autho is still valid
-        //merchant is still active
-        //settlement hasn't been altered
-        //transaction is eligible
-        if(!riskService.isEligibleForSettlement(transaction))
-        {
-            transactionService.changeStatus(id, TransactionStatus.FAILED);
-            return;
+            // Risk check before authorization
+            if (riskService.isRisky(transaction)) {
+                return transactionService.changeStatus(
+                        id,
+                        TransactionStatus.FAILED
+                );
+            }
         }
 
-        transaction=transactionService.startSettlement(id);
+        // If PROCESSING, authorize
+        if (transaction.getStatus() == TransactionStatus.PROCESSING) {
+            transaction = transactionService.authorizeTransaction(id);
 
-        //for safety again conditions
-        if (!riskService.canCompleteSettlement(transaction))
-        {
-            transactionService.changeStatus(id, TransactionStatus.FAILED);
-            return;
+            if (!riskService.isEligibleForSettlement(transaction)) {
+                return transactionService.changeStatus(
+                        id,
+                        TransactionStatus.FAILED
+                );
+            }
         }
 
-        //settlement logic
-        transactionService.completeSettlement(id);
+        // If AUTHORIZED, start settlement
+        if (transaction.getStatus() == TransactionStatus.AUTHORIZED) {
+            transaction = transactionService.startSettlement(id);
+
+            if (!riskService.canCompleteSettlement(transaction)) {
+                return transactionService.changeStatus(
+                        id,
+                        TransactionStatus.FAILED
+                );
+            }
+        }
+
+        // If SETTLEMENT_PENDING, complete settlement
+        if (transaction.getStatus() == TransactionStatus.SETTLEMENT_PENDING) {
+            if (!riskService.canCompleteSettlement(transaction)) {
+                return transactionService.changeStatus(
+                        id,
+                        TransactionStatus.FAILED
+                );
+            }
+
+            transaction = transactionService.completeSettlement(id);
+        }
+
+        return transaction;
     }
 }

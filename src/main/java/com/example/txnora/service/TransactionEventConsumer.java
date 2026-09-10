@@ -1,7 +1,9 @@
 package com.example.txnora.service;
 
+import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.event.TransactionCreatedEvent;
 import com.example.txnora.model.ProcessedEvent;
+import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.ProcessedEventRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -35,7 +37,7 @@ public class TransactionEventConsumer {
 
     public void consumeTransactionCreated(TransactionCreatedEvent event) {
 
-        log.info("Received TransactionCreated event: " + event.transactionId);
+        log.info("Received TransactionCreated event : {}" + event.transactionId);
         //System.out.println("Received TransactionCreated event: " + transactionId);
 
         //temp testing
@@ -44,8 +46,7 @@ public class TransactionEventConsumer {
         //Idempotency issue
         //if id exists in the database in processed events then DO NOT CONTINUE
         //else continue
-        if(processedEventRepository.existsById(event.eventId))
-        {
+        if (processedEventRepository.existsById(event.eventId)) {
             log.info(
                     "Event {} already processed. Skipping duplicate.",
                     event.eventId
@@ -54,18 +55,21 @@ public class TransactionEventConsumer {
             return;
         }
 
-        workflowService.processTransaction(event.transactionId);
+        Transaction transaction = workflowService.processTransaction(event.transactionId);
         //after this if processing of the transaction has any exception then consumer
         //retries will happen
         //Kafka has the msg but couldn't process it
 
         //after processing saving in db
-        ProcessedEvent processedEvent=new ProcessedEvent();
+        //checking one last time as well
+        if (transaction.getStatus() == TransactionStatus.SETTLED ||
+                transaction.getStatus() == TransactionStatus.FAILED) {
 
-        processedEvent.setEventId(event.eventId);
+            ProcessedEvent processedEvent = new ProcessedEvent();
+            processedEvent.setEventId(event.eventId);
+            processedEvent.setProcessedAt(Instant.now());
 
-        processedEvent.setProcessedAt(Instant.now());
-
-        processedEventRepository.save(processedEvent);
+            processedEventRepository.save(processedEvent);
+        }
     }
 }
