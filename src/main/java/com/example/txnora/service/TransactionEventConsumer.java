@@ -23,6 +23,8 @@ public class TransactionEventConsumer {
             topics = "transaction-created",
             groupId = "txnora-workflow-group"
     )
+
+
     public void consumeTransactionCreated(TransactionCreatedEvent event) {
 
         log.info("Received TransactionCreated event: " + event.transactionId);

@@ -3,6 +3,7 @@ package com.example.txnora.service;
 import com.example.txnora.enums.MerchantRiskLevel;
 import com.example.txnora.enums.MerchantStatus;
 import com.example.txnora.enums.TransactionStatus;
+import com.example.txnora.exception.MerchantNotFoundException;
 import com.example.txnora.model.Merchant;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.MerchantRepository;
@@ -107,7 +108,7 @@ public class RiskService
 
         // Merchant must still be active
         Merchant merchant = merchantRepository.findById(transaction.getMerchantId())
-                .orElseThrow(() -> new RuntimeException("Merchant not found!"));
+                .orElseThrow(() -> new MerchantNotFoundException("Merchant not found!"));
 
         if (merchant.getMerchantStatus() != MerchantStatus.ACTIVE)
         {
@@ -144,7 +145,7 @@ public class RiskService
 
         // Merchant must still be active
         Merchant merchant = merchantRepository.findById(transaction.getMerchantId())
-                .orElseThrow(() -> new RuntimeException("Merchant not found!"));
+                .orElseThrow(() -> new MerchantNotFoundException("Merchant not found!"));
 
         if (merchant.getMerchantStatus() != MerchantStatus.ACTIVE)
         {

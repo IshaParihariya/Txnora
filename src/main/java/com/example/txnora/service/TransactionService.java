@@ -3,6 +3,7 @@ package com.example.txnora.service;
 import com.example.txnora.dto.CreateTransactionRequest;
 import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.event.TransactionCreatedEvent;
+import com.example.txnora.exception.InvalidTransactionStatusException;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.MerchantRepository;
 import com.example.txnora.repository.TransactionRepository;
@@ -122,7 +123,7 @@ public class TransactionService
             // after settlement -> no process allowed
             // apart from that all are allowed
             // but no status need to be skipped
-            throw new RuntimeException("Invalid transaction status transition!");
+            throw new InvalidTransactionStatusException("Invalid transaction status transition!");
         }
 
         //debugging

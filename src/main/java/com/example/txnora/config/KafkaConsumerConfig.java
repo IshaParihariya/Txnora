@@ -1,6 +1,7 @@
 package com.example.txnora.config;
 
 import com.example.txnora.event.TransactionCreatedEvent;
+import com.example.txnora.exception.NonRetryableException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -84,6 +85,12 @@ public class KafkaConsumerConfig {
 
         factory.setCommonErrorHandler(errorHandler);
 
+        //these are not retryable exceptions
+        //so NO retries for these
+        errorHandler.addNotRetryableExceptions(
+                NonRetryableException.class
+        );
+
         return factory;
     }
 
@@ -99,5 +106,6 @@ public class KafkaConsumerConfig {
     {
         return new DeadLetterPublishingRecoverer(kafkaTemplate);
     }
+
 
 }
