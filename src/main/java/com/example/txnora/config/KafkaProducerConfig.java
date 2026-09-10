@@ -4,6 +4,7 @@ import com.example.txnora.event.TransactionCreatedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 //Json serializer
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,4 +68,5 @@ public class KafkaProducerConfig {
     public KafkaTemplate<String,TransactionCreatedEvent> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
+
 }

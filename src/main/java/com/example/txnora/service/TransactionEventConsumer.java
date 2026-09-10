@@ -28,6 +28,12 @@ public class TransactionEventConsumer {
         log.info("Received TransactionCreated event: " + event.transactionId);
         //System.out.println("Received TransactionCreated event: " + transactionId);
 
+        //temp testing
+        //throw new RuntimeException("TEST DLT ERROR");
+
         workflowService.processTransaction(event.transactionId);
+        //after this if processing of the transaction has any exception then consumer
+        //retries will happen
+        //Kafka has the msg but couldn't process it
     }
 }

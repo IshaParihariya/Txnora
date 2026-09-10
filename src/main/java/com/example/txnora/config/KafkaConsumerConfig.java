@@ -3,7 +3,8 @@ package com.example.txnora.config;
 import com.example.txnora.event.TransactionCreatedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-//deserialization
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.context.annotation.Bean;
@@ -59,9 +60,10 @@ public class KafkaConsumerConfig {
 
     }
 
+    //listener
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, TransactionCreatedEvent>
-    kafkaListenerContainerFactory() {
+    kafkaListenerContainerFactory(KafkaTemplate<String, TransactionCreatedEvent> kafkaTemplate) {
 
         ConcurrentKafkaListenerContainerFactory<String, TransactionCreatedEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -74,10 +76,28 @@ public class KafkaConsumerConfig {
         //here 2000L means after 2 sec retry
         //3L means number of attempts after initial fail
         DefaultErrorHandler errorHandler =
-                new DefaultErrorHandler(new FixedBackOff(2000L, 3L));
+                new DefaultErrorHandler(
+                        //recovery strategy after retries fail
+                        deadLetterPublishingRecoverer(kafkaTemplate),
+                        //but before that do this
+                        new FixedBackOff(2000L, 3L));
 
         factory.setCommonErrorHandler(errorHandler);
 
         return factory;
     }
+
+    //DLT : dead letter topic
+    //DLQ : dead letter queue
+    //after all consumer retries are exhausted and the event still cannot be processed successfully
+    //and still the transaction is not processing
+    //we will store it in the transaction-created.DLT
+    //and this will be published by KafkaTemplate
+    //and later on will see why it's not processing and all..
+    @Bean
+    public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(KafkaTemplate<String,TransactionCreatedEvent> kafkaTemplate)
+    {
+        return new DeadLetterPublishingRecoverer(kafkaTemplate);
+    }
+
 }
