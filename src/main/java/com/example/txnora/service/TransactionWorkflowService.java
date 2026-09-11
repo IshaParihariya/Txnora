@@ -1,6 +1,7 @@
 package com.example.txnora.service;
 
 import com.example.txnora.enums.TransactionStatus;
+import com.example.txnora.model.RiskEvaluationResult;
 import com.example.txnora.model.Transaction;
 import org.springframework.stereotype.Service;
 
@@ -16,15 +17,16 @@ public class TransactionWorkflowService {
     public TransactionWorkflowService(TransactionService transactionService, RiskService riskService) {
         this.transactionService = transactionService;
         this.riskService = riskService;
+
     }
 
     public Transaction processTransaction(String id)
     {
 
         //here we made changes cuz we had an another idempotency problem
-        //if status = authorised and it fails
+        //if status = authorized and it fails
         //retry will again start from start processing
-        //but as already authorised so it will be an error
+        //but as already authorized so it will be an error
         //here we are continuing from where it failed
 
         // First: get the CURRENT state from MongoDB
@@ -43,7 +45,8 @@ public class TransactionWorkflowService {
             transaction = transactionService.startProcessing(id);
 
             // Risk check before authorization
-            if (riskService.isRisky(transaction)) {
+            RiskEvaluationResult riskEvaluationResult=riskService.isRisky(transaction);
+            if (!riskEvaluationResult.isApproved()) {
                 return transactionService.changeStatus(
                         id,
                         TransactionStatus.FAILED
@@ -53,9 +56,13 @@ public class TransactionWorkflowService {
 
         // If PROCESSING, authorize
         if (transaction.getStatus() == TransactionStatus.PROCESSING) {
+
             transaction = transactionService.authorizeTransaction(id);
 
-            if (!riskService.isEligibleForSettlement(transaction)) {
+            // Check if transaction is eligible for settlement
+            RiskEvaluationResult riskEvaluationResult= riskService.isEligibleForSettlement(transaction);
+            if (!riskEvaluationResult.isApproved()) {
+
                 return transactionService.changeStatus(
                         id,
                         TransactionStatus.FAILED
@@ -65,19 +72,18 @@ public class TransactionWorkflowService {
 
         // If AUTHORIZED, start settlement
         if (transaction.getStatus() == TransactionStatus.AUTHORIZED) {
+
             transaction = transactionService.startSettlement(id);
 
-            if (!riskService.canCompleteSettlement(transaction)) {
-                return transactionService.changeStatus(
-                        id,
-                        TransactionStatus.FAILED
-                );
-            }
         }
 
         // If SETTLEMENT_PENDING, complete settlement
         if (transaction.getStatus() == TransactionStatus.SETTLEMENT_PENDING) {
-            if (!riskService.canCompleteSettlement(transaction)) {
+
+            // Check if settlement can still be completed
+            RiskEvaluationResult riskEvaluationResult= riskService.canCompleteSettlement(transaction);
+            if (!riskEvaluationResult.isApproved()) {
+
                 return transactionService.changeStatus(
                         id,
                         TransactionStatus.FAILED

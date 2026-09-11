@@ -1,10 +1,11 @@
 package com.example.txnora.service;
 
-import com.example.txnora.enums.MerchantRiskLevel;
 import com.example.txnora.enums.MerchantStatus;
+import com.example.txnora.enums.RiskRule;
 import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.exception.MerchantNotFoundException;
 import com.example.txnora.model.Merchant;
+import com.example.txnora.model.RiskEvaluationResult;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.repository.MerchantRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
 
 /**
  * to do all risk analysis if there are no risks in authorising this particular transaction..
@@ -25,76 +25,36 @@ import java.util.Set;
 public class RiskService
 {
     private final MerchantRepository merchantRepository;
+    //risk evaluation service
+    private final RiskEvaluationService riskEvaluationService;
 
-    public RiskService(MerchantRepository merchantRepository)
+    public RiskService(MerchantRepository merchantRepository, RiskEvaluationService riskEvaluationService)
     {
         this.merchantRepository = merchantRepository;
+        this.riskEvaluationService = riskEvaluationService;
     }
 
-    //only these currencies we are allowing for now
-    private static final Set<String> SUPPORTED_CURRENCIES =
-            Set.of("INR", "USD", "EUR", "GBP");
-
-
     //before authorization
-    public boolean isRisky(Transaction transaction)
+    public RiskEvaluationResult isRisky(Transaction transaction)
     {
         //debugging purpose
         log.info("RISK CHECK STARTED for transaction: {}", transaction.getId());
 
-        //Compare the transaction amount with 100000.
-        //If the result is greater than 0, the transaction amount is greater than 100000
-        if(transaction.getAmount().compareTo(new BigDecimal(100000)) > 0)
-        {
-
-            log.warn("Transaction amount is too high! : {}", transaction.getAmount());
-            return true;
-        }
-
-        //debugging
-        log.info("Looking for merchant: {}", transaction.getMerchantId());
-
-        //merchant or reciever might be suspicious
-        Merchant merchant = merchantRepository.findById(transaction.getMerchantId())
-                .orElseThrow(() -> new RuntimeException("Merchant not found!"));
-        //debugging
-        log.info("Merchant found: {}", merchant.getId());
-
-
-        if (merchant.getMerchantRiskLevel() != MerchantRiskLevel.LOW)
-        {
-            log.warn("Merchant is suspicious! : {}", merchant.getId());
-            return true;
-        }
-
-        //Suspended merchant
-        if (merchant.getMerchantStatus() == MerchantStatus.SUSPENDED)
-        {
-            log.warn("Merchant is suspended! : {}", merchant.getId());
-            return true;
-        }
-
-        //currency not supported
-        if (!SUPPORTED_CURRENCIES.contains(transaction.getCurrency()))
-        {
-            log.warn("Unsupported currency: {}", transaction.getCurrency());
-            return true;
-        }
-
-        //debugging
-        log.info("RISK CHECK PASSED for transaction: {}", transaction.getId());
-
-        //more risks are left will cover them later..
-        return false;
+        return riskEvaluationService.riskEvaluation(transaction);
     }
 
     //after authorization
-    public boolean isEligibleForSettlement(Transaction transaction)
+        public RiskEvaluationResult isEligibleForSettlement(Transaction transaction)
     {
         // Transaction must be AUTHORIZED
         if (transaction.getStatus() != TransactionStatus.AUTHORIZED)
         {
-            return false;
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.INVALID_TRANSACTION_STATUS,
+                    "Transaction is not in AUTHORIZED status"
+            );
         }
 
         //  Authorization validity - 30 minutes
@@ -103,7 +63,12 @@ public class RiskService
         if (authorizationTime == null ||
                 authorizationTime.isBefore(Instant.now().minus(30, ChronoUnit.MINUTES)))
         {
-            return false;
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.AUTHORIZATION_EXPIRED,
+                    "Authorization has expired"
+            );
         }
 
         // Merchant must still be active
@@ -112,53 +77,111 @@ public class RiskService
 
         if (merchant.getMerchantStatus() != MerchantStatus.ACTIVE)
         {
-            return false;
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.MERCHANT_SUSPENDED,
+                    "Merchant account is not active"
+            );
         }
 
         // Settlement amount must < 1,00,000
         if (transaction.getAmount().compareTo(new BigDecimal("100000"))>0)
         {
-            return false;
-        }
 
-        return true;
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.SETTLEMENT_AMOUNT_LIMIT,
+                    "Settlement amount exceeds 100000"
+            );
+        }
+        // Everything passed
+        return riskEvaluationService.saveResult(
+                transaction.getId(),
+                true,
+                null,
+                "Transaction is eligible for settlement"
+        );
     }
 
     //after settlement pending
     //for finally completing the settlement
-    public boolean canCompleteSettlement(Transaction transaction)
-    {
-        // Must be in SETTLEMENT_PENDING
-        if (transaction.getStatus() != TransactionStatus.SETTLEMENT_PENDING)
-        {
-            return false;
+    public RiskEvaluationResult canCompleteSettlement(
+            Transaction transaction) {
+
+        // Must be SETTLEMENT_PENDING
+        if (transaction.getStatus()
+                != TransactionStatus.SETTLEMENT_PENDING) {
+
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.INVALID_TRANSACTION_STATUS,
+                    "Transaction is not in SETTLEMENT_PENDING status"
+            );
         }
+
 
         // Settlement must not take too long
-        Instant settlementTime = transaction.getUpdatedAt();
+        Instant settlementTime =
+                transaction.getUpdatedAt();
 
-        if (settlementTime.isBefore(
-                Instant.now().minus(30, ChronoUnit.MINUTES)))
-        {
-            return false;
+        if (settlementTime == null ||
+                settlementTime.isBefore(
+                        Instant.now()
+                                .minus(30, ChronoUnit.MINUTES))) {
+
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.SETTLEMENT_EXPIRED,
+                    "Settlement has exceeded the allowed time"
+            );
         }
+
 
         // Merchant must still be active
-        Merchant merchant = merchantRepository.findById(transaction.getMerchantId())
-                .orElseThrow(() -> new MerchantNotFoundException("Merchant not found!"));
+        Merchant merchant =
+                merchantRepository
+                        .findById(transaction.getMerchantId())
+                        .orElseThrow(
+                                () -> new MerchantNotFoundException(
+                                        "Merchant not found!"
+                                )
+                        );
 
-        if (merchant.getMerchantStatus() != MerchantStatus.ACTIVE)
-        {
-            return false;
+        if (merchant.getMerchantStatus()
+                != MerchantStatus.ACTIVE) {
+
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.MERCHANT_SUSPENDED,
+                    "Merchant account is not active"
+            );
         }
 
-        // Settlement amount must < 1,00,000
-        if (transaction.getAmount().compareTo(new BigDecimal("100000"))>0)
-        {
-            return false;
+
+        // Settlement amount must not exceed 100000
+        if (transaction.getAmount()
+                .compareTo(new BigDecimal("100000")) > 0) {
+
+            return riskEvaluationService.saveResult(
+                    transaction.getId(),
+                    false,
+                    RiskRule.SETTLEMENT_AMOUNT_LIMIT,
+                    "Settlement amount exceeds 100000"
+            );
         }
 
 
-        return true;
+        // Everything passed
+        return riskEvaluationService.saveResult(
+                transaction.getId(),
+                true,
+                null,
+                "Settlement can be completed"
+        );
     }
 }
