@@ -145,6 +145,9 @@ public class TransactionService
         //updated at what Instant
         transaction.setUpdatedAt(Instant.now());
 
+        // save transaction first
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
         //transaction history
         transactionHistoryService.recordStatusChange(transaction);
 
@@ -155,7 +158,7 @@ public class TransactionService
         //but here if we saving this then mongodb will not have the older data so
         //we will work on the history later now
         //rn we just gonn' get this part done..
-        return transactionRepository.save(transaction);
+        return savedTransaction;
 
     }
 
