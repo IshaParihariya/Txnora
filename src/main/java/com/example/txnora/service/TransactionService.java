@@ -4,13 +4,17 @@ import com.example.txnora.dto.CreateTransactionRequest;
 import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.event.TransactionCreatedEvent;
 import com.example.txnora.exception.InvalidTransactionStatusException;
+import com.example.txnora.model.StatusHistoryEntry;
 import com.example.txnora.model.Transaction;
+import com.example.txnora.model.TransactionHistory;
 import com.example.txnora.repository.MerchantRepository;
+import com.example.txnora.repository.TransactionHistoryRepository;
 import com.example.txnora.repository.TransactionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,15 +30,13 @@ public class TransactionService
     private final TransactionRepository transactionRepository;
     //KAFKA
     private final TransactionEventProducer eventProducer;
+    //transaction history service
+    private final TransactionHistoryService transactionHistoryService;
 
-    //merchant repo
-    private final MerchantRepository merchantRepository;
-
-    public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer, MerchantRepository merchantRepository) {
+    public TransactionService(TransactionRepository transactionRepository, TransactionEventProducer eventProducer, TransactionHistoryService transactionHistoryService) {
         this.transactionRepository = transactionRepository;
         this.eventProducer = eventProducer;
-
-        this.merchantRepository = merchantRepository;
+        this.transactionHistoryService = transactionHistoryService;
     }
 
     public Transaction createTransactionService(CreateTransactionRequest request)
@@ -65,6 +67,9 @@ public class TransactionService
         // saving first here bro
         Transaction savedTransaction = transactionRepository.save(transaction);
 
+        //here we need to update the history
+        //as we don't have any history of transaction we are starting to create it so..
+        transactionHistoryService.createHistory(savedTransaction);
 
         //KAFKA
         //passing this info to Kafka from TransactionCreatedEvent
@@ -139,6 +144,12 @@ public class TransactionService
         transaction.setStatus(nextStatus);
         //updated at what Instant
         transaction.setUpdatedAt(Instant.now());
+
+        //transaction history
+        transactionHistoryService.recordStatusChange(transaction);
+
+        //debugging
+        log.info("status change recorded");
 
         //saving this status now
         //but here if we saving this then mongodb will not have the older data so
