@@ -1,10 +1,8 @@
 package com.example.txnora.controller;
 
+import com.example.txnora.dto.AcceptInvitationRequest;
 import com.example.txnora.service.UserService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * user related stuff includes inviting the user by the admin
@@ -25,4 +23,18 @@ public class UserController
     {
         userService.inviteUser(name,email);
     }
+
+    //user accepting/confirming the invite sent by the admin
+    @PostMapping("/accept")
+    public void acceptInvitation(@RequestBody AcceptInvitationRequest request)
+    {
+        //from url we take token
+        //and pass and confirm pass from user
+        userService.acceptInvitation(
+                request.getToken(),
+                request.getPassword(),
+                request.getConfirmPassword()
+        );
+    }
+
 }

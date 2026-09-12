@@ -41,8 +41,14 @@ public class SecurityConfig
                 .csrf(csrf -> csrf.disable())
                 //authorization of the api
                 .authorizeHttpRequests(auth-> auth
-                .requestMatchers("/api/auth/**", "/api/user/invite").permitAll()
-                .anyRequest().authenticated());
+                .requestMatchers("/api/auth/**",
+                        "/api/user/invite",
+                        "/api/user/accept")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated());
+
+
         return http.build();
     }
 }

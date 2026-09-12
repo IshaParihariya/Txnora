@@ -57,7 +57,12 @@ public class UserService
     //sending mail invites to the user by the admin
     public void inviteUser(String name, String email)
     {
+        //if user with this mail exists then don't send invitation
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("User already exists");
+        }
 
+        //else send
         String token = jwtService.generateInvitationToken(email);
 
         String invitationLink =
@@ -90,5 +95,42 @@ public class UserService
         user.setStatus(UserStatus.PENDING);
 
         return userRepository.save(user);
+    }
+
+    //for accepting invitation from the admin
+    public void acceptInvitation(String token, String password, String confirmPassword)
+    {
+        //here we will extract the email from the token
+        //also check if pass and confirm pass matches
+
+        //check if pass and confirm pass matches
+        if (!password.equals(confirmPassword)) {
+            throw new RuntimeException("Passwords do not match");
+        }
+
+        //extracting the mail from the token from the url
+        String email = jwtService.extractEmail(token);
+
+        //find user so we can update the user's info
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        //if status != pending there is something wrong
+        if (user.getStatus() != UserStatus.PENDING) {
+            throw new RuntimeException(
+                    "User has already accepted the invitation"
+            );
+        }
+
+        //encoding the password
+        user.setPasswordHash(
+                passwordEncoder.encode(password)
+        );
+
+        //updating status
+        user.setStatus(UserStatus.ACTIVE);
+
+        //update in the database
+        userRepository.save(user);
     }
 }

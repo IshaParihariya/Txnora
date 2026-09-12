@@ -46,4 +46,15 @@ public class JwtService
                 .signWith(secretKey)
                 .compact();
     }
+
+    //extraction of mail from token from url
+    public String extractEmail(String token)
+    {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
     }
+}
