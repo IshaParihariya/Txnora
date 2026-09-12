@@ -21,6 +21,7 @@ So yes, eventually we'll make the consumer/workflow idempotent,
  so processing the same event again doesn't break the transaction.
  */
 @RestController
+@RequestMapping("/api")
 public class TransactionController
 {
     private final TransactionService transactionService;
@@ -33,7 +34,7 @@ public class TransactionController
 
     }
 
-    @PostMapping("/transactions")
+    @PostMapping("/create/transaction")
     //@Valid =>> Run the validation rules on this request before giving it to my method
     public Transaction createTransaction(@Valid @RequestBody CreateTransactionRequest request)
     {
@@ -48,7 +49,7 @@ public class TransactionController
         return transaction;
     }
 
-    @GetMapping("transactions/{id}")
+    @GetMapping("/transactions/{id}")
     public Transaction getTransaction(@PathVariable String id)
     {
         return transactionService.getTransactionService(id);
@@ -63,7 +64,7 @@ public class TransactionController
         return transactionService.getAllTransactionService();
     }
 
-    @GetMapping("transactions/user/{userId}")
+    @GetMapping("/transactions/user/{userId}")
     public List<Transaction> findByUserId(@PathVariable String userId)
     {
         return transactionService.findByUserIdService(userId);
