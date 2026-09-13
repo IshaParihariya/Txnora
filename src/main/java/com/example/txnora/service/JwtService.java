@@ -57,4 +57,15 @@ public class JwtService
                 .getPayload()
                 .getSubject();
     }
+
+    //for login
+    public String generateLoginToken(String email, String role) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("role", role)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 86400000))
+                .signWith(secretKey)
+                .compact();
+    }
 }

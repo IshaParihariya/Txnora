@@ -17,40 +17,19 @@ public class UserService
     private final UserRepository userRepository;
     //password encoder
     private final PasswordEncoder passwordEncoder;
-    //spring's helper for contacting mongodb
-    private final MongoTemplate mongoTemplate;
+
     //email invite
     private final EmailService emailService;
     //jwt service
     private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, MongoTemplate mongoTemplate, EmailService emailService, JwtService jwtService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.mongoTemplate = mongoTemplate;
         this.emailService = emailService;
         this.jwtService = jwtService;
     }
 
-    //FOR ADMIN LOGIN
-    //i didn't want to create an another service for admin as its work was only login thing
-    // I'm adding this here only
-    public boolean adminLogin(String email,String password) {
-        //admin data is in db
-        //need to match from there
-        org.bson.Document admin = mongoTemplate
-                .getCollection("admin_info").
-                find(new org.bson.Document("email", email))
-                .first();
-
-        if (admin == null) {
-            return false;
-        }
-
-        String passwordHash = admin.getString("passwordHash");
-
-        return passwordEncoder.matches(password, passwordHash);
-    }
     //FOR USERS
 
     //user service -> email service -> resend service
