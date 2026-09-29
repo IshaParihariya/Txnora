@@ -6,6 +6,7 @@ import com.example.txnora.model.TransactionHistory;
 import com.example.txnora.dto.TransactionInvestigation;
 import com.example.txnora.repository.RiskEvaluationResultRepository;
 import com.example.txnora.repository.TransactionHistoryRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
  * gathers the data from our existing Mongo collections for investigation purpose
  */
 @Service
+@Slf4j
 public class InvestigationService {
 
     private final TransactionService transactionService;
@@ -32,9 +34,13 @@ public class InvestigationService {
 
     public TransactionInvestigation investigate(String transactionId) {
 
+        log.info("inside Investigation service investigate method");
+
         // Get transaction
         Transaction transaction =
                 transactionService.getTransactionService(transactionId);
+
+        log.info("inside Investigation service investigate method : "+transaction.getId());
 
         // Get transaction history
         TransactionHistory transactionHistory =
@@ -47,10 +53,15 @@ public class InvestigationService {
                                 )
                         );
 
+        log.info("inside Investigation service investigate method : "+transactionHistory.getStatusHistory());
+
         // Get all risk evaluation results
         List<RiskEvaluationResult> riskEvaluationResults =
                 riskEvaluationResultRepository
                         .findByTransactionId(transactionId);
+
+        log.info("inside Investigation service investigate method : "+riskEvaluationResults);
+
 
         // Combine everything
         return new TransactionInvestigation(

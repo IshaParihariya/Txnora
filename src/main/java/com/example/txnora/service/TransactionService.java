@@ -103,6 +103,14 @@ public class TransactionService
         return transactionRepository.findAll();
     }
 
+    public List<Transaction> getAllFailedTransactionService()
+    {
+        return transactionRepository.findAll()
+                .stream()
+                .filter(transaction -> transaction.getStatus() == TransactionStatus.FAILED)
+                .toList();
+    }
+
     public List<Transaction> findByUserIdService(String userId)
     {
         return transactionRepository.findAllByUserId(userId);
@@ -221,5 +229,6 @@ public class TransactionService
     {
         return changeStatus(id, TransactionStatus.SETTLED);
     }
+
 
 }

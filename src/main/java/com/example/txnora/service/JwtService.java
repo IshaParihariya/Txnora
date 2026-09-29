@@ -2,6 +2,7 @@ package com.example.txnora.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -12,6 +13,7 @@ import java.util.Date;
  * jwt related stuff
  */
 @Service
+@Slf4j
 public class JwtService
 {
     private final SecretKey secretKey;
@@ -60,6 +62,10 @@ public class JwtService
 
     //for login
     public String generateLoginToken(String email, String role) {
+
+        //debugging
+        log.info("inside generateLoginToken");
+
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)

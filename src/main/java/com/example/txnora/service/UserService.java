@@ -1,5 +1,6 @@
 package com.example.txnora.service;
 
+import com.example.txnora.dto.UserResponse;
 import com.example.txnora.enums.Role;
 import com.example.txnora.enums.UserStatus;
 import com.example.txnora.model.User;
@@ -7,6 +8,8 @@ import com.example.txnora.repository.UserRepository;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * user related logic
@@ -111,5 +114,25 @@ public class UserService
 
         //update in the database
         userRepository.save(user);
+    }
+
+    //fetching all users data
+    public List<UserResponse> getAllUsers()
+    {
+        return userRepository
+                .findAll()
+                .stream()
+                .map((user)->
+                        {
+                            UserResponse userResponse=new UserResponse(
+                                    user.getName(),
+                                    user.getEmail(),
+                                    user.getRole(),
+                                    user.getStatus(),
+                                    user.getId()
+                            );
+                            return userResponse;
+                        })
+                .toList();
     }
 }
