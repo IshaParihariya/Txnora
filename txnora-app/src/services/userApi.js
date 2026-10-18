@@ -16,13 +16,14 @@ export const inviteUser = async (name, email) => {
     return response.data;
 };
 
+
 export const acceptInvitation = async (
     token,
     password,
     confirmPassword
 ) => {
-    const response = await axios.post(
-        "http://localhost:8080/api/user/accept",
+    const response = await api.post(
+        "/api/user/accept",
         {
             token,
             password,
@@ -32,6 +33,7 @@ export const acceptInvitation = async (
 
     return response.data;
 };
+
 
 export const getAllUsers = async () => {
     const response = await api.get("/api/user/all");

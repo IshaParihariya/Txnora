@@ -30,9 +30,12 @@ public class KafkaConsumerConfig {
         Map<String, Object> config = new HashMap<>();
 
         config.put(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                "localhost:9092"
-        );
+    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+    System.getenv().getOrDefault(
+        "KAFKA_BOOTSTRAP_SERVERS",
+        "localhost:9092"
+    )
+);
 
         config.put(
                 ConsumerConfig.GROUP_ID_CONFIG,

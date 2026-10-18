@@ -1,39 +1,28 @@
+
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
 const handleLogin = async (email, password) => {
     try {
-
         const response = await axios.post(
-            "http://localhost:8080/api/auth/login",
-            {
-                email,
-                password
-            }
+            `${API_BASE_URL}/api/auth/login`,
+            { email, password }
         );
 
-        const token=response.data;
+        const token = response.data;
 
         localStorage.setItem("token", token);
 
-        //ROLE BASED
-
         const decodedToken = jwtDecode(token);
-
         localStorage.setItem("role", decodedToken.role);
 
-        console.log("Logged in role:", decodedToken.role);
-
         console.log("Login successful");
-        console.log("JWT:", response.data);
-
         return true;
-
     } catch (error) {
-
-        console.log("Login failed");
-        console.log(error);
-
+        console.error("Login failed:", error.response?.data || error.message);
         return false;
     }
 };
