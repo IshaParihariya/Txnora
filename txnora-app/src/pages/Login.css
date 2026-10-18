@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+
+.txn-dot {
+  animation: none;
+}
+
+/* Dot 1 */
+.txn-dot1 {
+  animation: dot1 11s ease-in-out infinite;
+}
+
+/* Dot 2 */
+.txn-dot2 {
+  animation: dot2 11s ease-in-out infinite;
+}
+
+/* Dot 3 */
+.txn-dot3 {
+  animation: dot3 11s ease-in-out infinite;
+}
+
+/* Dot 4 */
+.txn-dot4 {
+  animation: dot4 11s ease-in-out infinite;
+}
+
+/* Dot 5 */
+.txn-dot5 {
+  animation: dot5 11s ease-in-out infinite;
+}
+
+@keyframes dot1 {
+
+  0%{
+    transform: scale(1);
+  }
+
+  5% {
+    transform: scale(1.5);
+  }
+
+  15%,60% {
+    transform: scale(1)
+  }
+  100% {
+    transform: scale(1);
+  }
+
+}
+
+/* SECOND DOT */
+@keyframes dot2 {
+  0%, 15% {
+    transform: scale(1);
+  }
+
+  20%, 35% {
+    transform: scale(1.5);
+  }
+
+  40%, 100% {
+    transform: scale(1);
+  }
+}
+
+
+/* THIRD DOT */
+@keyframes dot3 {
+  0%, 35% {
+    transform: scale(1);
+  }
+
+  40%, 55% {
+    transform: scale(1.5);
+  }
+
+  60%, 100% {
+    transform: scale(1);
+  }
+}
+
+
+/* FOURTH DOT */
+@keyframes dot4 {
+  0%, 55% {
+    transform: scale(1);
+  }
+
+  60%, 75% {
+    transform: scale(1.5);
+  }
+
+  80%, 100% {
+    transform: scale(1);
+  }
+}
+
+
+/* FIFTH DOT */
+@keyframes dot5 {
+  0%, 75% {
+    transform: scale(1);
+  }
+
+  80%, 95% {
+    transform: scale(1.5);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
