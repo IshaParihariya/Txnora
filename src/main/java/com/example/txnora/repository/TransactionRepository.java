@@ -11,4 +11,6 @@ public interface TransactionRepository extends MongoRepository<Transaction,Strin
     //findByUserId here spring knows what userId is
     //so didn't hafta write logic and shit
     public List<Transaction> findAllByUserId(String userId);
+
+
 }

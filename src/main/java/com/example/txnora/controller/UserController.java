@@ -1,14 +1,20 @@
 package com.example.txnora.controller;
 
 import com.example.txnora.dto.AcceptInvitationRequest;
+import com.example.txnora.dto.UserResponse;
+import com.example.txnora.model.User;
 import com.example.txnora.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * user related stuff includes inviting the user by the admin
  */
 @RestController
 @RequestMapping("/api/user")
+@Slf4j
 public class UserController
 {
     private final UserService userService;
@@ -21,6 +27,7 @@ public class UserController
     @PostMapping("/invite")
     public void inviteUser(@RequestParam String name, @RequestParam String email)
     {
+        log.info("inside invite");
         userService.inviteUser(name,email);
     }
 
@@ -35,6 +42,14 @@ public class UserController
                 request.getPassword(),
                 request.getConfirmPassword()
         );
+    }
+
+    //fetching all users data to show on the ui
+    @GetMapping("/all")
+    public List<UserResponse> getAllUsers()
+    {
+        log.info("inside getAllUsers");
+        return userService.getAllUsers();
     }
 
 }

@@ -65,7 +65,7 @@ public class SecurityConfig
                         "/api/auth/**",
                         "/api/user/accept")
                         .permitAll()
-                        .requestMatchers("/api/user/invite").hasRole("ADMIN") //only admin can invite
+                        .requestMatchers("/api/user/**").hasRole("ADMIN") //only admin can invite
                         .anyRequest()
                         .authenticated()
                 )

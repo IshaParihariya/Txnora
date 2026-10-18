@@ -5,6 +5,7 @@ import com.example.txnora.enums.Role;
 import com.example.txnora.enums.UserStatus;
 import com.example.txnora.model.User;
 import com.example.txnora.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
  * user related logic
  */
 @Service
+@Slf4j
 public class UserService
 {
     private final UserRepository userRepository;
@@ -39,6 +41,7 @@ public class UserService
     //sending mail invites to the user by the admin
     public void inviteUser(String name, String email)
     {
+        log.info("inside invite UserService");
         //if user with this mail exists then don't send invitation
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("User already exists");
@@ -119,7 +122,8 @@ public class UserService
     //fetching all users data
     public List<UserResponse> getAllUsers()
     {
-        return userRepository
+        log.info("inside getAllUsers service");
+        List<UserResponse> responseList = userRepository
                 .findAll()
                 .stream()
                 .map((user)->
@@ -134,5 +138,9 @@ public class UserService
                             return userResponse;
                         })
                 .toList();
+
+        log.info("response list : "+responseList);
+
+        return responseList;
     }
 }

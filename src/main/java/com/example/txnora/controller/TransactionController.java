@@ -69,4 +69,11 @@ public class TransactionController
     {
         return transactionService.findByUserIdService(userId);
     }
+
+    //failed transactions
+    @GetMapping("/transactions/failed")
+    public List<Transaction> GetAllFailedTransactions()
+    {
+        return transactionService.getAllFailedTransactionService();
+    }
 }
