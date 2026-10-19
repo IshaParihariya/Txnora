@@ -36,6 +36,17 @@ public class KafkaConsumerConfig {
         "localhost:9092"
     )
 );
+        // Aiven Kafka authentication
+        config.put("security.protocol", "SASL_SSL");
+        config.put("sasl.mechanism", "PLAIN");
+
+        config.put(
+                "sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required "
+                        + "username=\"" + System.getenv("KAFKA_USERNAME") + "\" "
+                        + "password=\"" + System.getenv("KAFKA_PASSWORD") + "\";"
+        );
+
 
         config.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
