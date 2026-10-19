@@ -1,5 +1,6 @@
 package com.example.txnora.service;
 
+import com.example.txnora.enums.TransactionStatus;
 import com.example.txnora.model.RiskEvaluationResult;
 import com.example.txnora.model.Transaction;
 import com.example.txnora.model.TransactionHistory;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * gathers the data from our existing Mongo collections for investigation purpose
@@ -63,11 +65,36 @@ public class InvestigationService {
         log.info("inside Investigation service investigate method : "+riskEvaluationResults);
 
 
-        // Combine everything
-        return new TransactionInvestigation(
-                transaction,
-                transactionHistory,
-                riskEvaluationResults
-        );
+        //  Preserve the existing investigation response.
+        TransactionInvestigation investigation =
+                new TransactionInvestigation(
+                        transaction,
+                        transactionHistory,
+                        riskEvaluationResults
+                );
+
+        // Expose the actual recorded rejection reason for FAILED transactions.
+        if (transaction.getStatus() == TransactionStatus.FAILED) {
+
+            Optional<RiskEvaluationResult> rejectedResult =
+                    riskEvaluationResults.stream()
+                            .filter(result -> !result.isApproved())
+                            .findFirst();
+
+            rejectedResult.ifPresent(result -> {
+                investigation.setFailureReason(result.getReason());
+                investigation.setFailureRule(result.getRule());
+            });
+        }
+
+        return investigation;
+
+
+//        // Combine everything
+//        return new TransactionInvestigation(
+//                transaction,
+//                transactionHistory,
+//                riskEvaluationResults
+//        );
     }
 }

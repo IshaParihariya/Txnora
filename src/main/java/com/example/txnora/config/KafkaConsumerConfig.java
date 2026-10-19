@@ -47,6 +47,13 @@ public class KafkaConsumerConfig {
                         + "password=\"" + System.getenv("KAFKA_PASSWORD") + "\";"
         );
 
+        // Trust the CA certificate provided by Aiven
+        config.put("ssl.truststore.type", "PEM");
+        config.put(
+                "ssl.truststore.certificates",
+                System.getenv("KAFKA_CA_CERT")
+        );
+
 
         config.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
