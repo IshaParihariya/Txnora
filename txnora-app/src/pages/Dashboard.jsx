@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { getCurrentUser } from "../services/userApi";
+
 import {
     ArrowUpRight,
     CheckCircle2,
@@ -23,6 +25,9 @@ const Dashboard = () => {
     const [error, setError] = useState("");
 
     const [activeFilter, setActiveFilter] = useState("ALL");
+
+    const [user, setUser] = useState(null);
+    const [userLoading, setUserLoading] = useState(true);
 
 
     // ==================================================
@@ -65,6 +70,24 @@ const Dashboard = () => {
 
         fetchTransactions();
 
+    }, []);
+
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const currentUser = await getCurrentUser();
+                setUser(currentUser);
+            } catch (error) {
+                console.error(
+                    "Failed to fetch current user:",
+                    error.response?.data || error.message
+                );
+            } finally {
+                setUserLoading(false);
+            }
+        };
+
+        fetchCurrentUser();
     }, []);
 
 
@@ -458,7 +481,12 @@ const Dashboard = () => {
 
         <div className="min-h-screen bg-[#F7F8FA]">
 
-            <Navbar />
+            <Navbar
+                user={user}
+                onMenuClick={() => {
+                    // Connect your existing mobile sidebar toggle here if available.
+                }}
+            />
 
             <Sidebar />
 

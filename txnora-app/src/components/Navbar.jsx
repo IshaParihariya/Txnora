@@ -1,19 +1,16 @@
+
 import {
     Search,
     Menu,
     ChevronDown
 } from "lucide-react";
 
-const Navbar = ({
-    user = {
-        name: "Isha Parihariya",
-        role: "ADMIN",
-        email: "isha@example.com"
-    },
-    onMenuClick
-}) => {
+const Navbar = ({ user, onMenuClick }) => {
 
-    const initials = user.name
+    const displayName = user?.name || "Loading...";
+    const displayRole = user?.role || "";
+
+    const initials = user?.name
         ? user.name
             .split(" ")
             .map((word) => word[0])
@@ -40,10 +37,7 @@ const Navbar = ({
                     "
                     aria-label="Open navigation"
                 >
-                    <Menu
-                        size={19}
-                        strokeWidth={1.7}
-                    />
+                    <Menu size={19} strokeWidth={1.7} />
                 </button>
 
                 {/* Page title */}
@@ -55,20 +49,14 @@ const Navbar = ({
 
             </div>
 
-
             {/* Center search */}
             <div className="mx-4 hidden w-full max-w-[420px] md:block">
-
                 <div className="relative">
 
                     <Search
                         size={16}
                         strokeWidth={1.7}
-                        className="
-                            absolute left-3 top-1/2
-                            -translate-y-1/2
-                            text-[#68717A]
-                        "
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#68717A]"
                     />
 
                     <input
@@ -104,15 +92,14 @@ const Navbar = ({
                     </span>
 
                 </div>
-
             </div>
-
 
             {/* Right */}
             <div className="flex items-center gap-2">
 
                 {/* Mobile search */}
                 <button
+                    type="button"
                     className="
                         rounded-md p-2
                         text-[#68717A]
@@ -122,21 +109,19 @@ const Navbar = ({
                     "
                     aria-label="Search"
                 >
-                    <Search
-                        size={18}
-                        strokeWidth={1.7}
-                    />
+                    <Search size={18} strokeWidth={1.7} />
                 </button>
-
 
                 {/* User */}
                 <button
+                    type="button"
                     className="
                         flex items-center gap-2
                         rounded-md px-2 py-1.5
                         transition-colors
                         hover:bg-[#F7F8F8]
                     "
+                    aria-label="Current user"
                 >
 
                     {/* Avatar */}
@@ -153,29 +138,27 @@ const Navbar = ({
                         {initials}
                     </div>
 
-
                     {/* Name + role */}
                     <div className="hidden text-left sm:block">
 
                         <p className="max-w-[130px] truncate text-[13px] font-medium text-[#20242A]">
-                            {user.name}
+                            {displayName}
                         </p>
 
                         <p
                             className={`
                                 text-[10px] font-semibold tracking-wide
                                 ${
-                                    user.role === "ADMIN"
+                                    displayRole === "ADMIN"
                                         ? "text-[#4F5580]"
                                         : "text-[#68717A]"
                                 }
                             `}
                         >
-                            {user.role}
+                            {displayRole}
                         </p>
 
                     </div>
-
 
                     <ChevronDown
                         size={15}
