@@ -1,11 +1,16 @@
 package com.example.txnora.security;
 
+import com.example.txnora.dto.UserResponse;
 import com.example.txnora.service.JwtService;
+import com.example.txnora.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -14,13 +19,16 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    //TO GET REAL USER DATA AND ALL
+    private final UserService userService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
-            JwtService jwtService) {
+            JwtService jwtService, UserService userService) {
 
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -66,5 +74,26 @@ public class AuthController {
 
             throw e;
         }
+    }
+
+    //USER INFO
+    @GetMapping("/me")
+    public UserResponse getCurrentUser(Authentication authentication) {
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authentication required"
+            );
+        }
+
+        boolean isAdmin = authentication.getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        return userService.getCurrentUser(
+                authentication.getName(),
+                isAdmin
+        );
     }
 }

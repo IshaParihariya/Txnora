@@ -21,14 +21,14 @@ export const acceptInvitation = async (
     password,
     confirmPassword
 ) => {
-    const response = await axios.post(
-        "http://localhost:8080/api/user/accept",
-        {
-            token,
-            password,
-            confirmPassword
-        }
-    );
+    const response = await api.post(
+    "/api/user/accept",
+    {
+        token,
+        password,
+        confirmPassword
+    }
+);
 
     return response.data;
 };

@@ -55,24 +55,33 @@ public class SecurityConfig
     @Bean
     public SecurityFilterChain securityFilterChain (HttpSecurity http) throws Exception
     {
+
         http
                 .cors(cors -> {})
-                //csrf token disable
+                // Disable CSRF for the stateless JWT API
                 .csrf(csrf -> csrf.disable())
-                //authorization of the api
-                .authorizeHttpRequests(auth-> auth
-                .requestMatchers(
-                        "/api/auth/**",
-                        "/api/user/accept")
-                        .permitAll()
-                        .requestMatchers("/api/user/**").hasRole("ADMIN") //only admin can invite
-                        .anyRequest()
-                        .authenticated()
+                // Authorization rules
+                .authorizeHttpRequests(auth -> auth
+                        // Only login is public
+                        .requestMatchers("/api/auth/login").permitAll()
+
+                        // Invitation acceptance is public
+                        .requestMatchers("/api/user/accept").permitAll()
+
+                        // Only ADMIN can access user-management APIs
+                        .requestMatchers("/api/user/**").hasRole("ADMIN")
+
+                        // Current user's profile requires authentication
+                        .requestMatchers("/api/auth/me").authenticated()
+
+                        // All remaining endpoints require authentication
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
+
 
 
         return http.build();
@@ -86,15 +95,8 @@ public class SecurityConfig
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-    java.util.Arrays.stream(
-        System.getenv().getOrDefault(
-            "APP_CORS_ALLOWED_ORIGINS",
-            "http://localhost:5173"
-        ).split(",")
-    )
-    .map(String::trim)
-    .toList()
-);
+                List.of("http://localhost:5173")
+        );
 
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
