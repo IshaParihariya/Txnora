@@ -1,10 +1,15 @@
+
 import { useEffect, useState } from "react";
 import {
     MailPlus,
     Send,
     CheckCircle2,
     Clock3,
-    RefreshCw
+    RefreshCw,
+    Users,
+    Search,
+    AlertCircle,
+    UserRound,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -13,14 +18,12 @@ import Footer from "../components/Footer";
 
 import {
     inviteUser,
-    getAllUsers
+    getAllUsers,
 } from "../services/userApi";
 
 const Invitations = () => {
-
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-
     const [users, setUsers] = useState([]);
 
     const [loading, setLoading] = useState(true);
@@ -28,22 +31,22 @@ const Invitations = () => {
 
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
+    const [search, setSearch] = useState("");
 
-
-    // Fetch users
+    // Fetch the existing backend records.
     const fetchUsers = async () => {
-
         try {
-
             setLoading(true);
             setError("");
 
             const data = await getAllUsers();
 
+            if (!Array.isArray(data)) {
+                throw new Error("Unexpected user data received.");
+            }
+
             setUsers(data);
-
         } catch (err) {
-
             console.error("Failed to fetch users:", err);
 
             if (err.response?.status === 403) {
@@ -53,567 +56,510 @@ const Invitations = () => {
             } else {
                 setError("Unable to load invitation information.");
             }
-
         } finally {
-
             setLoading(false);
-
         }
     };
-
 
     useEffect(() => {
         fetchUsers();
     }, []);
 
-
-    // Send invitation
+    // Preserve the existing invitation API and behavior.
     const handleInvite = async (e) => {
-
         e.preventDefault();
 
         setSuccess("");
         setError("");
 
-        if (!name.trim() || !email.trim()) {
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim();
 
+        if (!trimmedName || !trimmedEmail) {
             setError("Please enter both name and email.");
-
             return;
         }
 
         try {
-
             setSending(true);
 
-            await inviteUser(
-                name.trim(),
-                email.trim()
-            );
+            await inviteUser(trimmedName, trimmedEmail);
 
             setSuccess(
-                `Invitation sent successfully to ${email.trim()}.`
+                `Invitation sent successfully to ${trimmedEmail}.`
             );
 
             setName("");
             setEmail("");
 
-            // Refresh table
             await fetchUsers();
-
         } catch (err) {
-
             console.error("Failed to send invitation:", err);
 
             if (err.response?.status === 403) {
-
                 setError(
                     "You are not authorized to send invitations."
                 );
-
             } else {
-
                 setError(
                     err.response?.data?.message ||
                     "Failed to send invitation."
                 );
-
             }
-
         } finally {
-
             setSending(false);
-
         }
     };
 
+    // These counts are derived from the existing backend response.
+    const totalInvitations = users.length;
 
-    // Counts
-    const totalUsers = users.length;
-
-    const pendingUsers = users.filter(
+    const pendingInvitations = users.filter(
         (user) => user.status === "PENDING"
     ).length;
 
-    const acceptedUsers = users.filter(
+    const acceptedInvitations = users.filter(
         (user) => user.status === "ACTIVE"
     ).length;
 
+    const filteredUsers = users.filter((user) => {
+        const query = search.trim().toLowerCase();
+
+        if (!query) return true;
+
+        return [
+            user.name,
+            user.email,
+            user.role,
+            user.status,
+            user.id,
+        ].some((value) =>
+            String(value ?? "").toLowerCase().includes(query)
+        );
+    });
+
+    const inputClass =
+        "w-full rounded-lg border border-[#DDE2E4] bg-white px-3.5 py-3 " +
+        "text-sm text-[#20242A] placeholder:text-[#9AA1AC] " +
+        "outline-none transition focus:border-[#4F5580] " +
+        "focus:ring-2 focus:ring-[#4F5580]/10 disabled:bg-gray-50";
+
+    const stats = [
+        {
+            label: "Total Invitations",
+            value: totalInvitations,
+            description: "Records returned by the backend",
+            icon: MailPlus,
+            iconClass: "bg-slate-100 text-slate-600",
+        },
+        {
+            label: "Pending Invitations",
+            value: pendingInvitations,
+            description: "Awaiting acceptance",
+            icon: Clock3,
+            iconClass: "bg-amber-50 text-amber-600",
+        },
+        {
+            label: "Accepted",
+            value: acceptedInvitations,
+            description: "Accounts with ACTIVE status",
+            icon: CheckCircle2,
+            iconClass: "bg-emerald-50 text-emerald-600",
+        },
+    ];
 
     return (
-        <div className="min-h-screen bg-[#f7f8fa] text-[#20242A]">
-
+        <div className="min-h-screen bg-[#F7F8FA] text-[#20242A]">
             <Navbar />
-
             <Sidebar />
 
-            <main className="lg:ml-[240px] pt-14 min-h-[calc(100vh-56px)]">
+            <main className="min-h-[calc(100vh-56px)] pt-14 lg:ml-[240px]">
+                <div className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 lg:px-7">
 
-                <div className="px-6 py-6">
-
-                    {/* HEADER */}
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-7">
-
-                        <div>
-
-                            <div className="flex items-center gap-3">
-
-                                <div className="w-10 h-10 rounded-lg bg-[#eef0f7] flex items-center justify-center">
-
-                                    <MailPlus
-                                        size={20}
-                                        className="text-[#4F5580]"
-                                    />
-
-                                </div>
-
-                                <div>
-
-                                    <h1 className="text-2xl font-semibold">
-                                        Invitations
-                                    </h1>
-
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        Manage employee invitations and account access
-                                    </p>
-
-                                </div>
-
+                    {/* Page header */}
+                    <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#4F5580]/10">
+                                <MailPlus
+                                    size={21}
+                                    className="text-[#4F5580]"
+                                />
                             </div>
 
+                            <div>
+                                <h1 className="text-2xl font-semibold tracking-tight text-[#20242A]">
+                                    Invitations
+                                </h1>
+
+                                <p className="mt-1 text-sm text-[#68717A]">
+                                    Manage employee onboarding and account access.
+                                </p>
+                            </div>
                         </div>
 
-
                         <button
+                            type="button"
                             onClick={fetchUsers}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DDE2E4] bg-white px-4 py-2.5 text-sm font-medium text-[#20242A] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-
                             <RefreshCw
                                 size={16}
                                 className={loading ? "animate-spin" : ""}
                             />
-
                             Refresh
-
                         </button>
+                    </section>
 
-                    </div>
+                    {/* Feedback */}
+                    {success && (
+                        <div
+                            role="status"
+                            className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-emerald-800"
+                        >
+                            <CheckCircle2
+                                size={19}
+                                className="mt-0.5 shrink-0"
+                            />
+                            <p className="text-sm">{success}</p>
+                        </div>
+                    )}
 
+                    {error && (
+                        <div
+                            role="alert"
+                            className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-red-700"
+                        >
+                            <AlertCircle
+                                size={19}
+                                className="mt-0.5 shrink-0"
+                            />
+                            <p className="text-sm">{error}</p>
+                        </div>
+                    )}
 
-                    {/* SUMMARY CARDS */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    {/* Summary cards */}
+                    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {stats.map((stat) => {
+                            const Icon = stat.icon;
 
-                        {/* Total */}
-                        <div className="bg-white border border-gray-200 rounded-xl p-5">
+                            return (
+                                <div
+                                    key={stat.label}
+                                    className="rounded-xl border border-[#E3E6EC] bg-white p-5 transition-shadow hover:shadow-sm"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-medium text-[#68717A]">
+                                                {stat.label}
+                                            </p>
 
-                            <div className="flex items-center justify-between">
+                                            <p className="mt-2 text-3xl font-semibold tracking-tight text-[#20242A]">
+                                                {loading ? "—" : stat.value}
+                                            </p>
+                                        </div>
+
+                                        <div
+                                            className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.iconClass}`}
+                                        >
+                                            <Icon size={20} />
+                                        </div>
+                                    </div>
+
+                                    <p className="mt-3 text-xs text-[#87909D]">
+                                        {stat.description}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </section>
+
+                    {/* New invitation form */}
+                    <section className="overflow-hidden rounded-xl border border-[#E3E6EC] bg-white">
+                        <div className="border-b border-[#E8EBF0] px-5 py-5 sm:px-6">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F1F2F8]">
+                                    <Send
+                                        size={17}
+                                        className="text-[#4F5580]"
+                                    />
+                                </div>
 
                                 <div>
-
-                                    <p className="text-sm text-gray-500">
-                                        Total Users
+                                    <h2 className="font-semibold text-[#20242A]">
+                                        Send New Invitation
+                                    </h2>
+                                    <p className="mt-1 text-sm text-[#68717A]">
+                                        Invite an employee to create a Txnora account.
                                     </p>
-
-                                    <p className="text-2xl font-semibold mt-1">
-                                        {totalUsers}
-                                    </p>
-
                                 </div>
-
-                                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-
-                                    <MailPlus
-                                        size={19}
-                                        className="text-gray-500"
-                                    />
-
-                                </div>
-
                             </div>
-
                         </div>
-
-
-                        {/* Pending */}
-                        <div className="bg-white border border-gray-200 rounded-xl p-5">
-
-                            <div className="flex items-center justify-between">
-
-                                <div>
-
-                                    <p className="text-sm text-gray-500">
-                                        Pending Invitations
-                                    </p>
-
-                                    <p className="text-2xl font-semibold mt-1">
-                                        {pendingUsers}
-                                    </p>
-
-                                </div>
-
-                                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-
-                                    <Clock3
-                                        size={19}
-                                        className="text-amber-600"
-                                    />
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        {/* Accepted */}
-                        <div className="bg-white border border-gray-200 rounded-xl p-5">
-
-                            <div className="flex items-center justify-between">
-
-                                <div>
-
-                                    <p className="text-sm text-gray-500">
-                                        Accepted
-                                    </p>
-
-                                    <p className="text-2xl font-semibold mt-1">
-                                        {acceptedUsers}
-                                    </p>
-
-                                </div>
-
-                                <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-
-                                    <CheckCircle2
-                                        size={19}
-                                        className="text-emerald-600"
-                                    />
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {/* INVITE FORM */}
-                    <div className="bg-white border border-gray-200 rounded-xl mb-6">
-
-                        <div className="px-6 py-5 border-b border-gray-200">
-
-                            <h2 className="font-semibold text-gray-800">
-                                Send New Invitation
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Invite an employee to create a Txnora account.
-                            </p>
-
-                        </div>
-
 
                         <form
                             onSubmit={handleInvite}
-                            className="p-6"
+                            className="space-y-5 p-5 sm:p-6"
                         >
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                                {/* Name */}
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                 <div>
-
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label
+                                        htmlFor="invite-name"
+                                        className="mb-2 block text-sm font-medium text-[#343A46]"
+                                    >
                                         Full Name
                                     </label>
 
                                     <input
+                                        id="invite-name"
                                         type="text"
+                                        autoComplete="name"
                                         value={name}
-                                        onChange={(e) =>
-                                            setName(e.target.value)
-                                        }
+                                        onChange={(e) => setName(e.target.value)}
                                         placeholder="Enter full name"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F5580] focus:ring-1 focus:ring-[#4F5580]"
+                                        disabled={sending}
+                                        className={inputClass}
+                                        required
                                     />
-
                                 </div>
 
-
-                                {/* Email */}
                                 <div>
-
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label
+                                        htmlFor="invite-email"
+                                        className="mb-2 block text-sm font-medium text-[#343A46]"
+                                    >
                                         Work Email
                                     </label>
 
                                     <input
+                                        id="invite-email"
                                         type="email"
+                                        autoComplete="email"
                                         value={email}
-                                        onChange={(e) =>
-                                            setEmail(e.target.value)
-                                        }
+                                        onChange={(e) => setEmail(e.target.value)}
                                         placeholder="employee@company.com"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F5580] focus:ring-1 focus:ring-[#4F5580]"
+                                        disabled={sending}
+                                        className={inputClass}
+                                        required
                                     />
-
                                 </div>
-
                             </div>
 
-
-                            {/* Messages */}
-                            {success && (
-
-                                <div className="mt-5 flex items-center gap-3 px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700">
-
-                                    <CheckCircle2 size={18} />
-
-                                    <p className="text-sm">
-                                        {success}
-                                    </p>
-
-                                </div>
-
-                            )}
-
-
-                            {error && (
-
-                                <div className="mt-5 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
-
-                                    <p className="text-sm">
-                                        {error}
-                                    </p>
-
-                                </div>
-
-                            )}
-
-
-                            <div className="mt-5">
+                            <div className="flex flex-col gap-3 border-t border-[#EEF0F3] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-xs leading-5 text-[#87909D]">
+                                    The invitation will be processed by Txnora's existing invitation service.
+                                </p>
 
                                 <button
                                     type="submit"
                                     disabled={sending}
-                                    className="flex items-center gap-2 px-5 py-3 rounded-lg bg-[#4F5580] text-white text-sm font-medium hover:bg-[#43496f] transition disabled:opacity-50"
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#4F5580] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#43496F] focus:outline-none focus:ring-2 focus:ring-[#4F5580]/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
+                                    {sending ? (
+                                        <RefreshCw
+                                            size={16}
+                                            className="animate-spin"
+                                        />
+                                    ) : (
+                                        <Send size={16} />
+                                    )}
 
-                                    <Send size={16} />
-
-                                    {sending
-                                        ? "Sending..."
-                                        : "Send Invitation"
-                                    }
-
+                                    {sending ? "Sending..." : "Send Invitation"}
                                 </button>
+                            </div>
+                        </form>
+                    </section>
 
+                    {/* Invitation history */}
+                    <section className="overflow-hidden rounded-xl border border-[#E3E6EC] bg-white">
+                        <div className="flex flex-col gap-4 border-b border-[#E8EBF0] px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <h2 className="font-semibold text-[#20242A]">
+                                    Invitation History
+                                </h2>
+
+                                <p className="mt-1 text-sm text-[#68717A]">
+                                    Track invitation and account statuses.
+                                </p>
                             </div>
 
-                        </form>
+                            <div className="relative w-full lg:max-w-sm">
+                                <Search
+                                    size={17}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87909D]"
+                                />
 
-                    </div>
-
-
-                    {/* INVITATION TABLE */}
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-
-                        <div className="px-6 py-5 border-b border-gray-200">
-
-                            <h2 className="font-semibold text-gray-800">
-                                Invitation History
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Track invited users and their account status
-                            </p>
-
+                                <input
+                                    type="search"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Search name, email, role or ID..."
+                                    aria-label="Search invitation history"
+                                    className={`${inputClass} pl-9`}
+                                />
+                            </div>
                         </div>
 
+                        <div className="border-b border-[#E8EBF0] px-5 py-3 sm:px-6">
+                            <p className="text-xs text-[#68717A]">
+                                {loading
+                                    ? "Loading records..."
+                                    : `${filteredUsers.length} of ${users.length} records shown`}
+                            </p>
+                        </div>
 
                         {loading ? (
-
-                            <div className="py-16 text-center text-sm text-gray-500">
-                                Loading invitations...
+                            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+                                <RefreshCw
+                                    size={24}
+                                    className="animate-spin text-[#4F5580]"
+                                />
+                                <p className="mt-3 text-sm font-medium text-[#343A46]">
+                                    Loading invitation records
+                                </p>
+                                <p className="mt-1 text-xs text-[#87909D]">
+                                    Retrieving the latest backend data.
+                                </p>
                             </div>
-
                         ) : users.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F1F2F8]">
+                                    <MailPlus
+                                        size={23}
+                                        className="text-[#4F5580]"
+                                    />
+                                </div>
 
-                            <div className="py-16 text-center text-sm text-gray-500">
-                                No invitations found.
+                                <h3 className="mt-4 text-sm font-semibold text-[#343A46]">
+                                    No invitation records
+                                </h3>
+
+                                <p className="mt-1 max-w-sm text-sm text-[#87909D]">
+                                    Invitation records will appear here when returned by the backend.
+                                </p>
                             </div>
-
+                        ) : filteredUsers.length === 0 ? (
+                            <div className="px-4 py-14 text-center">
+                                <Search
+                                    size={23}
+                                    className="mx-auto text-[#A0A7B2]"
+                                />
+                                <p className="mt-3 text-sm font-medium text-[#343A46]">
+                                    No matching records
+                                </p>
+                                <p className="mt-1 text-sm text-[#87909D]">
+                                    Try another name, email, role, or ID.
+                                </p>
+                            </div>
                         ) : (
-
                             <div className="overflow-x-auto">
-
-                                <table className="w-full text-sm">
-
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-
+                                <table className="w-full min-w-[850px] text-left text-sm">
+                                    <thead className="border-b border-[#E8EBF0] bg-[#F9FAFB]">
                                         <tr>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                User
-                                            </th>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                Email
-                                            </th>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                Role
-                                            </th>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                Invitation
-                                            </th>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                Account Status
-                                            </th>
-
-                                            <th className="text-left px-5 py-3 font-medium text-gray-500">
-                                                User ID
-                                            </th>
-
+                                            {[
+                                                "User",
+                                                "Email",
+                                                "Role",
+                                                "Invitation Status",
+                                                "Account Status",
+                                                "User ID",
+                                            ].map((heading) => (
+                                                <th
+                                                    key={heading}
+                                                    className="whitespace-nowrap px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-[#68717A]"
+                                                >
+                                                    {heading}
+                                                </th>
+                                            ))}
                                         </tr>
-
                                     </thead>
 
-
-                                    <tbody className="divide-y divide-gray-100">
-
-                                        {users.map((user) => {
-
+                                    <tbody className="divide-y divide-[#EEF0F3]">
+                                        {filteredUsers.map((user) => {
                                             const accepted =
                                                 user.status === "ACTIVE";
 
                                             return (
-
                                                 <tr
                                                     key={user.id}
-                                                    className="hover:bg-gray-50 transition"
+                                                    className="transition-colors hover:bg-[#FAFBFC]"
                                                 >
-
-                                                    {/* USER */}
                                                     <td className="px-5 py-4">
-
                                                         <div className="flex items-center gap-3">
-
-                                                            <div className="w-9 h-9 rounded-full bg-[#4F5580] text-white flex items-center justify-center text-sm font-medium">
-
-                                                                {user.name
-                                                                    ?.charAt(0)
-                                                                    ?.toUpperCase()}
-
+                                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EEF0F7] text-sm font-semibold text-[#4F5580]">
+                                                                {user.name?.trim()
+                                                                    ? user.name
+                                                                          .trim()
+                                                                          .charAt(0)
+                                                                          .toUpperCase()
+                                                                    : <UserRound size={16} />}
                                                             </div>
 
-                                                            <span className="font-medium text-gray-800">
-                                                                {user.name}
+                                                            <span className="whitespace-nowrap font-medium text-[#20242A]">
+                                                                {user.name || "—"}
                                                             </span>
-
                                                         </div>
-
                                                     </td>
 
-
-                                                    {/* EMAIL */}
-                                                    <td className="px-5 py-4 text-gray-600">
-                                                        {user.email}
+                                                    <td className="px-5 py-4 text-[#596273]">
+                                                        {user.email || "—"}
                                                     </td>
 
-
-                                                    {/* ROLE */}
                                                     <td className="px-5 py-4">
-
-                                                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200">
-
-                                                            {user.role}
-
+                                                        <span className="inline-flex rounded-full border border-[#DDE2E4] bg-[#F9FAFB] px-2.5 py-1 text-xs font-medium text-[#596273]">
+                                                            {user.role || "—"}
                                                         </span>
-
                                                     </td>
 
-
-                                                    {/* INVITATION */}
                                                     <td className="px-5 py-4">
-
-                                                        {accepted ? (
-
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-
-                                                                <CheckCircle2 size={13} />
-
-                                                                Accepted
-
-                                                            </span>
-
-                                                        ) : (
-
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-
-                                                                <Clock3 size={13} />
-
-                                                                Pending
-
-                                                            </span>
-
-                                                        )}
-
-                                                    </td>
-
-
-                                                    {/* ACCOUNT STATUS */}
-                                                    <td className="px-5 py-4">
-
                                                         <span
-                                                            className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                                user.status === "ACTIVE"
-                                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium ${
+                                                                accepted
+                                                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                                    : "border-amber-200 bg-amber-50 text-amber-700"
                                                             }`}
                                                         >
+                                                            {accepted ? (
+                                                                <CheckCircle2 size={13} />
+                                                            ) : (
+                                                                <Clock3 size={13} />
+                                                            )}
 
-                                                            {user.status}
-
+                                                            {accepted ? "Accepted" : "Pending"}
                                                         </span>
-
                                                     </td>
 
-
-                                                    {/* ID */}
-                                                    <td className="px-5 py-4 text-xs text-gray-400 font-mono">
-
-                                                        {user.id}
-
+                                                    <td className="px-5 py-4">
+                                                        <span
+                                                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
+                                                                accepted
+                                                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                                    : user.status === "PENDING"
+                                                                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                                                                      : "border-[#DDE2E4] bg-[#F9FAFB] text-[#596273]"
+                                                            }`}
+                                                        >
+                                                            {user.status || "Unknown"}
+                                                        </span>
                                                     </td>
 
+                                                    <td
+                                                        className="max-w-[190px] truncate px-5 py-4 font-mono text-xs text-[#87909D]"
+                                                        title={user.id || ""}
+                                                    >
+                                                        {user.id || "—"}
+                                                    </td>
                                                 </tr>
-
                                             );
-
                                         })}
-
                                     </tbody>
-
                                 </table>
-
                             </div>
-
                         )}
-
-                    </div>
-
+                    </section>
                 </div>
-
             </main>
 
             <Footer />
-
         </div>
     );
 };

@@ -10,12 +10,17 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
+import { useState } from "react";
+
 
 
 const Sidebar = ({ mobileOpen = false, onClose }) => {
 
     const navigate = useNavigate();
     const location = useLocation();
+
+    //logout modal
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
 
     const role = localStorage.getItem("role") || "SUPPORT";
@@ -196,51 +201,108 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
                     ))}
 
                 </nav>
+               
+{/* Bottom utilities */}
+<div className="shrink-0 border-t border-[#DDE2E4] px-3 py-3">
 
-                {/* Bottom utilities */}
-                <div className="shrink-0 border-t border-[#DDE2E4] px-3 py-3">
+    {/* Settings */}
+    <button
+        onClick={() => handleNavigation("/settings")}
+        className={`
+            group relative flex h-9 w-full items-center gap-2.5
+            rounded-md px-2.5 text-sm font-medium transition-colors
+            ${
+                location.pathname === "/settings"
+                    ? "bg-[#4F5580]/[0.08] text-[#4F5580]"
+                    : "text-[#68717A] hover:bg-[#F7F8F8] hover:text-[#20242A]"
+            }
+        `}
+    >
+        {location.pathname === "/settings" && (
+            <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-[#4F5580]" />
+        )}
 
-                    <button
-                        className="
-                            group flex h-9 w-full items-center gap-2.5
-                            rounded-md px-2.5
-                            text-sm font-medium text-[#68717A]
-                            transition-colors
-                            hover:bg-[#F7F8F8] hover:text-[#20242A]
-                        "
-                    >
-                        <Settings
-                            size={16}
-                            strokeWidth={1.7}
-                        />
+        <Settings size={16} strokeWidth={1.7} />
+        <span>Settings</span>
+    </button>
 
-                        <span>
-                            Settings
-                        </span>
-                    </button>
-
-                    <button
-                        className="
-                            group mt-0.5 flex h-9 w-full items-center gap-2.5
-                            rounded-md px-2.5
-                            text-sm font-medium text-[#68717A]
-                            transition-colors
-                            hover:bg-[#F7F8F8] hover:text-[#20242A]
-                        "
-                    >
-                        <LogOut
-                            size={16}
-                            strokeWidth={1.7}
-                        />
-
-                        <span>
-                            Logout
-                        </span>
-                    </button>
-
-                </div>
+    {/* Logout */}
+    <button
+        onClick={() => setShowLogoutModal(true)}
+        className="mt-1 flex h-9 w-full items-center gap-2.5
+                   rounded-md px-2.5 text-sm font-medium
+                   text-[#68717A] transition-colors
+                   hover:bg-red-50 hover:text-red-600"
+    >
+        <LogOut size={16} strokeWidth={1.7} />
+        <span>Logout</span>
+    </button>
+</div>
 
             </aside>
+
+            {/* Logout Confirmation Modal */}
+{showLogoutModal && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-modal-title"
+            className="w-full max-w-sm rounded-2xl border border-[#E3E6EC]
+                       bg-white p-6 shadow-2xl"
+        >
+            {/* Icon */}
+            <div className="mb-4 flex h-12 w-12 items-center justify-center
+                            rounded-xl bg-red-50 text-red-600">
+                <LogOut size={22} strokeWidth={1.8} />
+            </div>
+
+            {/* Heading */}
+            <h2
+                id="logout-modal-title"
+                className="text-lg font-semibold text-[#20242A]"
+            >
+                Log out of Txnora?
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-[#68717A]">
+                Are you sure you want to log out? You will need to sign
+                in again to access your account.
+            </p>
+
+            {/* Actions */}
+            <div className="mt-6 flex justify-end gap-3">
+                <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="rounded-xl border border-[#DDE2E4] px-4 py-2.5
+                               text-sm font-medium text-[#20242A]
+                               transition hover:bg-[#F7F8F8]"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    onClick={() => {
+                        localStorage.removeItem("token");
+                        localStorage.removeItem("user");
+                        localStorage.removeItem("role");
+
+                        setShowLogoutModal(false);
+                        navigate("/", { replace: true });
+                        onClose?.();
+                    }}
+                    className="rounded-xl bg-red-600 px-4 py-2.5
+                               text-sm font-medium text-white
+                               transition hover:bg-red-700"
+                >
+                    Yes, log out
+                </button>
+            </div>
+        </div>
+    </div>
+)}
+
         </>
     );
 };
