@@ -105,6 +105,8 @@ public class AuthController {
             @RequestBody ChangePasswordRequest request,
             Authentication authentication) {
 
+        log.info("inside change password auth controller");
+
         if (authentication == null ||
                 !authentication.isAuthenticated()) {
 
@@ -113,6 +115,8 @@ public class AuthController {
                     "Authentication required"
             );
         }
+
+        log.info("inside auth controller : authentication not null");
 
         boolean isAdmin = authentication.getAuthorities()
                 .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));

@@ -205,6 +205,8 @@ public class UserService
             String currentPassword,
             String newPassword) {
 
+        log.info("inside user service : change password");
+
         // Validate input
         if (currentPassword == null || currentPassword.isBlank()
                 || newPassword == null || newPassword.isBlank()) {
@@ -214,6 +216,7 @@ public class UserService
                     "Current password and new password are required"
             );
         }
+        log.info("inside user service : old password or new password not null");
 
         if (newPassword.length() < 8) {
             throw new ResponseStatusException(
@@ -222,10 +225,14 @@ public class UserService
             );
         }
 
+        log.info("inside user service : password length > 8 ");
+
         //  Fetch account according to the authenticated role
         String passwordHash;
 
         if (isAdmin) {
+
+            log.info("inside user service : admin");
 
             Document admin = mongoTemplate
                     .getCollection("admin_info")
@@ -242,6 +249,8 @@ public class UserService
             passwordHash = admin.getString("passwordHash");
 
         } else {
+
+            log.info("inside user service : user");
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new ResponseStatusException(
@@ -293,6 +302,8 @@ public class UserService
 
             user.setPasswordHash(newPasswordHash);
             userRepository.save(user);
+
+            log.info("inside user service : new password set!");
         }
     }
 }
