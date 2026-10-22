@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../services/userApi";
 
 import {
@@ -19,6 +19,8 @@ import { getAllTransactions } from "../services/transactionApi";
 
 
 const Dashboard = () => {
+
+    const navigate = useNavigate();
 
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -148,21 +150,18 @@ const Dashboard = () => {
     // TOTAL TRANSACTION VALUE
     // ==================================================
 
+
     const totalTransactionValue = useMemo(() => {
-
-        return transactions.reduce(
-            (total, transaction) => {
-
-                return total + Number(
-                    transaction.amount || 0
-                );
-
-            },
-            0
-        );
-
+        return transactions
+            .filter(
+                (transaction) => transaction.status === "SETTLED"
+            )
+            .reduce(
+                (total, transaction) =>
+                    total + Number(transaction.amount || 0),
+                0
+            );
     }, [transactions]);
-
 
     // ==================================================
     // FORMAT AMOUNT
@@ -215,7 +214,7 @@ const Dashboard = () => {
                     (transaction) =>
                         transaction.status === "FAILED"
                 )
-                .slice(0, 8);
+                .slice(0, 5);
 
         }
 
@@ -230,12 +229,12 @@ const Dashboard = () => {
                         transaction.status === "AUTHORIZED" ||
                         transaction.status === "SETTLEMENT_PENDING"
                 )
-                .slice(0, 8);
+                .slice(0, 5);
 
         }
 
 
-        return sortedTransactions.slice(0, 8);
+        return sortedTransactions.slice(0, 5);
 
     }, [
         transactions,
@@ -687,19 +686,12 @@ const Dashboard = () => {
                             </p>
 
 
-                            <p className="
-                                text-xs
-                                mt-1
-                                text-[#68717A]
-                            ">
-
+                            <p
+                                className="text-xs mt-1 text-[#68717A]">
                                 {loading
                                     ? "Loading..."
-                                    : formatAmount(
-                                        totalTransactionValue
-                                    )
+                                    : `Settled amount: ${formatAmount(totalTransactionValue)}`
                                 }
-
                             </p>
 
                         </div>
@@ -996,7 +988,9 @@ const Dashboard = () => {
                                     </div>
 
 
-                                    <button className="
+                                    <button
+                                        onClick={() => navigate("/transactions")}
+                                        className="
                                         text-xs
                                         font-medium
                                         text-[#4F5580]
