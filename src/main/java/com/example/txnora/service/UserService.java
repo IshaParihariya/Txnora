@@ -8,8 +8,10 @@ import com.example.txnora.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -194,5 +196,103 @@ public class UserService
                 user.getStatus(),
                 user.getId()
         );
+    }
+
+    //change password
+    public void changePassword(
+            String email,
+            boolean isAdmin,
+            String currentPassword,
+            String newPassword) {
+
+        // Validate input
+        if (currentPassword == null || currentPassword.isBlank()
+                || newPassword == null || newPassword.isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Current password and new password are required"
+            );
+        }
+
+        if (newPassword.length() < 8) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "New password must contain at least 8 characters"
+            );
+        }
+
+        //  Fetch account according to the authenticated role
+        String passwordHash;
+
+        if (isAdmin) {
+
+            Document admin = mongoTemplate
+                    .getCollection("admin_info")
+                    .find(new Document("email", email))
+                    .first();
+
+            if (admin == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Account not found"
+                );
+            }
+
+            passwordHash = admin.getString("passwordHash");
+
+        } else {
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Account not found"
+                    ));
+
+            passwordHash = user.getPasswordHash();
+        }
+
+        //  Apply the same password rules to both account types
+        if (passwordHash == null ||
+                !passwordEncoder.matches(currentPassword, passwordHash)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Current password is incorrect"
+            );
+        }
+
+        if (passwordEncoder.matches(newPassword, passwordHash)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "New password must differ from current password"
+            );
+        }
+
+        //  Hash the new password
+        String newPasswordHash = passwordEncoder.encode(newPassword);
+
+        // Update the appropriate collection
+        if (isAdmin) {
+
+            mongoTemplate.getCollection("admin_info").updateOne(
+                    new Document("email", email),
+                    new Document(
+                            "$set",
+                            new Document("passwordHash", newPasswordHash)
+                    )
+            );
+
+        } else {
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Account not found"
+                    ));
+
+            user.setPasswordHash(newPasswordHash);
+            userRepository.save(user);
+        }
     }
 }

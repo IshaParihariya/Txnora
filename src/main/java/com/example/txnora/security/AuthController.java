@@ -12,6 +12,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @Slf4j
@@ -94,6 +96,37 @@ public class AuthController {
         return userService.getCurrentUser(
                 authentication.getName(),
                 isAdmin
+        );
+    }
+
+    //change password
+    @PostMapping("/change-password")
+    public Map<String, String> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Authentication required"
+            );
+        }
+
+        boolean isAdmin = authentication.getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        userService.changePassword(
+                authentication.getName(),
+                isAdmin,
+                request.getCurrentPassword(),
+                request.getNewPassword()
+        );
+
+        return Map.of(
+                "message",
+                "Password changed successfully"
         );
     }
 }
