@@ -1,6 +1,5 @@
 
 import {
-    Search,
     Menu,
     ChevronDown
 } from "lucide-react";
@@ -49,68 +48,8 @@ const Navbar = ({ user, onMenuClick }) => {
 
             </div>
 
-            {/* Center search */}
-            <div className="mx-4 hidden w-full max-w-[420px] md:block">
-                <div className="relative">
-
-                    <Search
-                        size={16}
-                        strokeWidth={1.7}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#68717A]"
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="Search transaction ID"
-                        className="
-                            h-9 w-full
-                            rounded-md
-                            border border-[#DDE2E4]
-                            bg-[#F7F8F8]
-                            pl-9 pr-10
-                            text-sm text-[#20242A]
-                            outline-none
-                            placeholder:text-[#68717A]
-                            focus:border-[#55858A]
-                            focus:bg-white
-                            focus:ring-2
-                            focus:ring-[#55858A]/10
-                        "
-                    />
-
-                    <span
-                        className="
-                            absolute right-2.5 top-1/2
-                            -translate-y-1/2
-                            rounded border border-[#DDE2E4]
-                            bg-white px-1.5 py-0.5
-                            text-[10px] font-medium
-                            text-[#68717A]
-                        "
-                    >
-                        /
-                    </span>
-
-                </div>
-            </div>
-
             {/* Right */}
             <div className="flex items-center gap-2">
-
-                {/* Mobile search */}
-                <button
-                    type="button"
-                    className="
-                        rounded-md p-2
-                        text-[#68717A]
-                        hover:bg-[#F7F8F8]
-                        hover:text-[#20242A]
-                        md:hidden
-                    "
-                    aria-label="Search"
-                >
-                    <Search size={18} strokeWidth={1.7} />
-                </button>
 
                 {/* User */}
                 <button
