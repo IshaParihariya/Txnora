@@ -242,7 +242,7 @@ export default function Settings() {
       window.setTimeout(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
-        window.location.replace("/login");
+        window.location.replace("/");
       }, 1500);
     } catch (error) {
       console.error("Password change failed:", error);
