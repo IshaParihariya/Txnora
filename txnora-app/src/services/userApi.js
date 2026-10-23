@@ -16,22 +16,21 @@ export const inviteUser = async (name, email) => {
     return response.data;
 };
 
-export const acceptInvitation = async (
-    token,
-    password,
-    confirmPassword
-) => {
-    const response = await api.post(
-    "/api/user/accept",
-    {
+
+export const acceptInvitation = async ({
+                                           token,
+                                           password,
+                                           confirmPassword,
+                                       }) => {
+    const response = await api.post("/api/user/accept", {
         token,
         password,
-        confirmPassword
-    }
-);
+        confirmPassword,
+    });
 
     return response.data;
 };
+
 
 export const getAllUsers = async () => {
     const response = await api.get("/api/user/all");
@@ -55,3 +54,4 @@ export const changePassword = async ({
 
     return response.data;
 };
+

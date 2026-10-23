@@ -63,8 +63,9 @@ public class UserService
         //else send
         String token = jwtService.generateInvitationToken(email);
 
+        //HARDCODING THIS HERE CUZ SIMPLE RN SO..
         String invitationLink =
-                "http://localhost:5173/accept-invite?token=" + token;
+                "https://txnora-sigma.vercel.app/accept-invite?token=" + token;
 
         boolean mailSent= emailService.sendInvitationEmail(
                 name,
@@ -101,36 +102,69 @@ public class UserService
         //here we will extract the email from the token
         //also check if pass and confirm pass matches
 
-        //check if pass and confirm pass matches
-        if (!password.equals(confirmPassword)) {
-            throw new RuntimeException("Passwords do not match");
-        }
-
-        //extracting the mail from the token from the url
-        String email = jwtService.extractEmail(token);
-
-        //find user so we can update the user's info
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        //if status != pending there is something wrong
-        if (user.getStatus() != UserStatus.PENDING) {
-            throw new RuntimeException(
-                    "User has already accepted the invitation"
+        //we checking if token exists
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invitation token is required"
             );
         }
 
-        //encoding the password
-        user.setPasswordHash(
-                passwordEncoder.encode(password)
-        );
+        if (password == null || password.isBlank()
+                || confirmPassword == null || confirmPassword.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password and confirmation are required"
+            );
+        }
 
-        //updating status
+        if (password.length() < 8) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password must contain at least 8 characters"
+            );
+        }
+
+        //check if pass and confirm pass matches
+        if (!password.equals(confirmPassword)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Passwords do not match"
+            );
+        }
+
+
+        final String email;
+
+        try {
+            email = jwtService.extractEmail(token);
+        } catch (io.jsonwebtoken.JwtException
+                 | IllegalArgumentException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invitation link is invalid or has expired"
+            );
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No account was found for this invitation"
+                ));
+
+        if (user.getStatus() != UserStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "This invitation has already been accepted"
+            );
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(password));
         user.setStatus(UserStatus.ACTIVE);
 
-        //update in the database
         userRepository.save(user);
     }
+
 
     //fetching all users data
     public List<UserResponse> getAllUsers()

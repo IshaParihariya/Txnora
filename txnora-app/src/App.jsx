@@ -12,6 +12,8 @@ import SettingsPage from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import AdminRoute from "./components/AdminRoute";
 
+import AcceptInvite from "./pages/AcceptInvite";
+
 const App = () => {
     return (
         <div>
@@ -36,6 +38,10 @@ const App = () => {
                     path="/investigations"
                     element={<Investigations />}
                 />
+
+                {/*accept invite broo*/}
+
+                <Route path="/accept-invite" element={<AcceptInvite />} />
 
                
 <Route
