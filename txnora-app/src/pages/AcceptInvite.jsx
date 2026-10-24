@@ -45,6 +45,18 @@ export default function AcceptInvite() {
                 confirmPassword,
             });
 
+            // I were having issues here like
+            // when i logged in as support still old sessions were there
+            // so i couldn't actually get the support ui
+            // i had access to admin ui even after being logged in as support
+            // as i earlier were logged in as the admin
+            // old session issue
+
+            // Clear any previous Admin or Support session
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            localStorage.removeItem("user");
+
             setSuccess("Your account is activated! Redirecting to login...");
 
             setTimeout(() => {
