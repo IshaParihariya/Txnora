@@ -6,7 +6,8 @@ import {
     MailPlus,
     Settings,
     LogOut,
-    X
+    X,
+    BookOpen
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -104,9 +105,15 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
                 <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#DDE2E4] px-4">
 
                     <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center text-lg font-semibold text-[#4F5580]">
-                            ◈
-                        </div>
+                        {/*<div className="flex h-7 w-7 items-center justify-center text-lg font-semibold text-[#4F5580]">*/}
+                        {/*    ◈*/}
+                        {/*</div>*/}
+                        {/*our logo*/}
+                        <img
+                            src="/txnoraLogo1.png"
+                            alt="Txnora logo"
+                            className="h-7 w-7 object-contain"
+                        />
 
                         <span className="text-[13px] font-semibold tracking-[0.08em] text-[#20242A]">
                             TXNORA
@@ -204,6 +211,23 @@ const Sidebar = ({ mobileOpen = false, onClose }) => {
                
 {/* Bottom utilities */}
 <div className="shrink-0 border-t border-[#DDE2E4] px-3 py-3">
+
+    {/* About & User Guide */}
+    <a
+        href="/txnora-user-guide.pdf"
+        // When the user clicks the link, the PDF opens in a new browser tab, leaving the Txnora application open in the original tab
+        target="_blank"
+        // This adds security and privacy protections when opening the new tab. It prevents the opened page from accessing the original page through window.opener and avoids sending referrer information.
+        rel="noopener noreferrer"
+        onClick={() => onClose?.()}
+        className="flex h-9 w-full items-center gap-2.5
+               rounded-md px-2.5 text-sm font-medium
+               text-[#68717A] transition-colors
+               hover:bg-[#F7F8F8] hover:text-[#20242A]"
+    >
+        <BookOpen size={16} strokeWidth={1.7} />
+        <span>About & User Guide</span>
+    </a>
 
     {/* Settings */}
     <button
