@@ -57,18 +57,35 @@ The backend validates status transitions and records status changes in transacti
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    U[Administrator / Support User] --> FE[React Frontend]
-    FE -->|HTTP REST API + JWT| BE[Spring Boot Backend]
-    BE --> DB[(MongoDB)]
-    BE -->|Transaction-created event| K[Apache Kafka]
-    K --> C[Kafka Consumer]
-    C --> W[Transaction Workflow]
-    W --> DB
-    BE --> H[Investigation Service]
-    H --> DB
-    H --> FE
+## Architecture
+
+```text
+Administrator / Support User
+            |
+            v
+      React Frontend
+            |
+       REST API + JWT
+            |
+            v
+    Spring Boot Backend
+       /           \
+      v             v
+   MongoDB       Apache Kafka
+                     |
+                     v
+               Kafka Consumer
+                     |
+                     v
+            Transaction Workflow
+
+Spring Boot Backend
+          |
+          v
+ Investigation Service
+          |
+          v
+        MongoDB
 ```
 
 ### Main Components
@@ -174,13 +191,18 @@ The backend requires MongoDB and Kafka to be configured and accessible. Kafka ev
 
 Configure the following environment variables for your local environment:
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `MONGODB_URI` | MongoDB connection URI | Must be configured |
-| `KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap server address | `localhost:9092` |
-| `SPRING_KAFKA_CONSUMER_GROUP_ID` | Kafka consumer group | `txnora-workflow-group` |
-| `PORT` | Backend HTTP port | `8080` |
+| Variable | Purpose |
+|---|---|
+| `MONGODB_URI` | MongoDB connection URI configured in Render. |
+| `SPRING_DATA_MONGODB_URI` | Spring Boot MongoDB connection configuration also present in Render. |
+| `KAFKA_BOOTSTRAP_SERVERS` | Kafka broker connection configuration. |
+| `KAFKA_USERNAME` | Kafka authentication username. |
+| `KAFKA_PASSWORD` | Kafka authentication password. |
+| `KAFKA_CA_CERT` | Kafka CA certificate configuration. |
+| `APP_CORS_ALLOWED_ORIGINS` | Configured allowed frontend origins for CORS. |
+| `RESEND_API_KEY` | API credential for the Resend email service. |
 
+Configure the required environment variables in your deployment environment. The exact variables used at runtime depend on the application's configuration. Never commit secret values, database connection strings, passwords, API keys, or certificates containing private material to source control.
 The application also uses Resend for invitation emails. Configure the credential expected by the email service before testing invitation delivery.
 
 **Security:** Never commit database credentials, API keys, JWT secrets, or other private configuration values to GitHub.
