@@ -10,6 +10,19 @@ Transaction processing involves multiple stages, and a final status alone may no
 
 The project combines a React frontend with a Java Spring Boot backend, MongoDB persistence, and an Apache Kafka event-driven workflow.
 
+## Demo Access
+
+You can explore Txnora using the following demo accounts:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `ishaprojects123@gmail.com` | `admin123` |
+| Support | `ishh1036@gmail.com` | `admin123` |
+
+**Demo notes:**
+- The current invitation flow is restricted to `ishh1036@gmail.com`. Support for inviting other email addresses is planned.
+- The backend is hosted on Render, which may go idle after a period of inactivity. On your first visit after inactivity, please allow approximately **50–60 seconds** for the backend to wake up before retrying login if needed.
+
 ## Key Features
 
 ### Transaction Monitoring
